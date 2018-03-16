@@ -37,23 +37,22 @@
 		var chipsPassedIn = false;
 		qn = getParameterByName("qn");
 		var state = getParameterByName("state");
-		if (!(qn == null || qn == "" || state == null || state == "")) {
+		if (!(qn == null || qn == "" || state == null || state == "" || state == "undefined")) {
 			try {
+				console.log(getParameterByName("state"));
 				var inParams = JSON.parse(atob(getParameterByName("state")));
 				//var inParams = { state: JSON.parse(atob("eyJjaGlwcGllcyI6W3sieCI6MTgwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6OTAsInkiOjI5NSwiYWxwaGEiOjEsInZhbCI6LTF9LHsieCI6MjI1LCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MjcwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MTM1LCJ5IjoyOTUsImFscGhhIjoxLCJ2YWwiOi0xfV0sImNoaXBDb3VudCI6NSwiY3VycmVudFBvc0NvbCI6MzE1LCJjdXJyZW50TmVnQ29sIjoxODAsImN1cnJlbnRQb3NSb3ciOjIwNSwiY3VycmVudE5lZ1JvdyI6Mjk1fQ=="))};
-				if (typeof inParams != "undefined" && inParams != "")  {
-					chipsPassedIn = true;
-					savedChips = inParams.chippies;
-					chipCount = inParams.chipCount;
-					currentPosCol = inParams.currentPosCol;
-					currentNegCol = inParams.currentNegCol;
-					currentPosRow = inParams.currentPosRow;
-					currentNegRow = inParams.currentPosCol;
-					score = inParams.score;
-				}
+				savedChips = inParams.chippies;
+				chipCount = inParams.chipCount;
+				currentPosCol = inParams.currentPosCol;
+				currentNegCol = inParams.currentNegCol;
+				currentPosRow = inParams.currentPosRow;
+				currentNegRow = inParams.currentPosCol;
+				score = inParams.score;
+				chipsPassedIn = true;
 			}
 			catch (e) {
-				console.log("Invalid state passed in.");
+				console.log("Invalid state passed in." + getParameterByName("state"));
 			}
 		}
 		
