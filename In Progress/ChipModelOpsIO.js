@@ -34,7 +34,6 @@
 	var savePoint = 0;
 
 	function initVM() {
-		console.log(getParameterByName("state");
 		if (getParameterByName("state") != "undefined") {
 			console.log("got shit");
 			var inParams = JSON.parse(atob(getParameterByName("state")));
