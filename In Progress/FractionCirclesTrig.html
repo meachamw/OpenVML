@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Fraction Pieces Virtual Manipulative</title>
+
+	<script src="../lib/easeljs-NEXT.combined.js"></script>
+	<script type="text/javascript" src="../lib/tweenjs-NEXT.combined.js"></script>
+
+<script id="editable">
+	var canvas, stage, container;
+	var savedBounds;
+	var rod10, rod9, rod8, rod7, rod6, rod5, rod4, rod3, rod2, rod1;
+	var rods = [];
+	var targetZones = [];
+	var hotSpots = [];
+	var dropZones = [];
+	var rodCount = 0;
+	var currentRow = 2;
+	var currentCol = 2;
+	var targetX = 340;
+	var targetY = 100;
+	var currentAlpha = 1;
+	var zoneCount=0;
+	var zones = 1;
+	var nextRotation = [0,0,0,0]
+	var rotationIndex = 0;
+	var hideLabels = false;
+	var activeCount = 0;
+	var T1x = 340,
+	    T1y = 100,
+	    T2x = 510,
+	    T2y = 100,
+	    T3x = 340,
+	    T3y = 300,
+	    T4x = 510,
+	    T4y = 300;
+	    
+
+    
+	function init() {
+		qn = getParameterByName("qn");
+		initValue = getParameterByName("inVal");
+		if (initValue != null) {
+				in100 = Math.floor(initValue/100);
+				in10 = Math.floor(initValue%100/10);
+				in1 = initValue%10;
+		}
+		resize();
+		// create stage and point it to the canvas:
+		canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage(canvas);
+
+		// enable touch interactions if supported on the current device:
+		createjs.Touch.enable(stage);
+
+		// enabled mouse over / out events
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
+
+	    container = new createjs.Container();
+		stage.addChild(container);
+
+ 
+		createStage();
+		
+		stage.addChild(drawPie(175,65,75,12,"#2F3032","#888888","G"));
+		stage.addChild(drawPie(175,120,75,10,"#C5409A","#9900CC","L"));
+		stage.addChild(drawPie(175,185,75,8,"#2C70B7","#0000CD","B"));
+		stage.addChild(drawPie(175,255,75,6,"#289BC4","#3EA89D","T"));
+		stage.addChild(drawPie(175,340,75,5,"#2FA896","#4DB727","E"));
+		stage.addChild(drawPie(175,425,75,4,"#FBBB3E","#FFD700","Y"));
+		stage.addChild(drawPie(90,180,75,3,"#F07B4F","#FF7F50","O"));
+		stage.addChild(drawPie(90,265,75,2,"#EA498C","#FF69B4","P"));
+		stage.addChild(drawPie(90,350,75,1,"#ED4C52","#CC0000","R"));
+//		stage.addChild(drawTarget(430,200,75,true,0));
+		stage.addChild(drawTarget(340,100,75,true,0));
+		stage.addChild(drawTarget(510,100,75,false,1));
+		stage.addChild(drawTarget(340,300,75,false,2));
+		stage.addChild(drawTarget(510,300,75,false,3));
+        
+  	    stage.addChild(initPie(90,350,75,1,"#ED4C52","#CC0000","R"));      
+  	    stage.addChild(initPie(90,265,75,2,"#ED4C52","#FF69B4","P"));      
+  	    stage.addChild(initPie(90,180,75,3,"#ED4C52","#FF7F50","O"));      
+  	    stage.addChild(initPie(175,425,75,4,"#ED4C52","#FFD700","Y"));      
+  	    stage.addChild(initPie(175,340,75,5,"#ED4C52","#4DB727","E"));      
+  	    stage.addChild(initPie(175,255,75,6,"#ED4C52","#3EA89D","T"));      
+  	    stage.addChild(initPie(175,185,75,8,"#ED4C52","#0000CD","B"));      
+  	    stage.addChild(initPie(175,120,75,10,"#ED4C52","#9900CC","L"));      
+  	    stage.addChild(initPie(175,65,75,12,"#ED4C52","#888888","G"));      
+
+        createjs.Ticker.setFPS(20);
+        createjs.Ticker.addEventListener("tick", tick);
+		stage.update();
+
+	}
+	function tick(event) {
+		if (update || activeCount) {
+			console.log("Update " + activeCount);
+			update = false; // only update once
+			stage.update(event);
+		}
+	}
+	function resize() {
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+
+		var height = window.innerHeight * .95;
+		
+		var ratio = canvas.width/canvas.height;
+		var width = height * ratio;
+		
+		canvas.style.width = width+'px';
+		canvas.style.height = height+'px';
+	}
+	function stop() {
+		createjs.Ticker.removeEventListener("tick", tick);
+	}
+	
+
+
+	function initPie(xloc,yloc,radius,angle,textColor,color,label) {		
+	    var bg = new createjs.Shape();
+	    var hotSpotFill = "#000000";
+	    var x = radius/2;
+	    var y = radius/2;
+	    var rotate = false;
+	    var rotateRight = false;
+	    var rotateLeft = false;
+		bg.graphics.mt(x,y);
+		bg.graphics.beginFill(color);
+		//.lt(xloc,yloc-height);
+		bg.graphics.arc(x, y, radius, 0,-Math.PI*2/angle,true);
+		bg.graphics.lt(x, y);
+		bg.graphics.lt(x+radius,y);
+		bg.graphics.lt(x,y).endFill();
+
+		bg.graphics.mt(x,y);
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000");
+		bg.graphics.arc(x, y, radius, 0,-Math.PI*2/angle,true);
+		if (angle != 1) {
+			bg.graphics.lt(x, y);
+			bg.graphics.lt(x+radius,y);
+		}
+		var lHS = new createjs.Shape();
+		lHS.graphics.mt(x,y);
+		lHS.graphics.beginFill(color);
+		//.lt(xloc,yloc-height);
+		lHS.graphics.arc(x, y, radius, 0,-Math.PI/angle,true);
+		lHS.graphics.lt(x, y);
+		lHS.graphics.lt(x+radius,y).endFill();;
+
+		lHS.alpha = 1;
+		lHS.on("click", function (evt) {
+				rotateLeft = true;
+		});
+		var rx1 = Math.cos(Math.PI/(angle));
+		var ry1 = Math.sin(Math.PI/(angle));
+		var x1 = x-(radius*rx1);
+		var y1 = y-(radius*ry1);
+		var rHS = new createjs.Shape();
+		rHS.graphics.mt(x,y);
+		rHS.graphics.beginFill(color);
+		rHS.graphics.arc(x, y, radius, Math.PI+Math.PI/angle,Math.PI+Math.PI*2/angle);
+		rHS.graphics.lt(x,y);
+		rHS.graphics.lt(x1,y1).endFill();;
+
+		rHS.alpha = 1;
+		rHS.on("click", function (evt) {
+				rotateRight = true;
+		});
+		var text = new createjs.Text(label, "bold 12px Arial", "#FFFFFF");
+        text.x = radius*1.5 - 8;
+        text.y = radius/2 - 8;
+		text.regX = 5;
+		text.regY = -5;
+        text.textBaseline = "alphabetic";
+		text.visible = hideLabels ? false : true;
+        
+
+		var hotSpot = new createjs.Shape();
+		hotSpot.graphics.beginFill(hotSpotFill);
+		hotSpot.graphics.drawCircle(radius*1.5+3, radius/2 - 3, 4).endFill();	
+		hotSpot.regX = 1.5;
+		hotSpot.regY = -1.5
+		hotSpot.alpha = .2;
+		hotSpot.cursor = "hand";
+		hotSpot.scaleX = hotSpot.scaleY = hotSpot.scale = 1;		
+		hotSpot.on("rollover", function (evt) {
+			this.alpha = 1;
+			hotSpot.scaleX = hotSpot.scaleY = hotSpot.scale = 1.02;		
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			update = true;   
+		});
+		hotSpot.on("rollout", function (evt) {
+			if (!rotate)
+				this.alpha = .2;
+			hotSpot.scaleX = hotSpot.scaleY = hotSpot.scale = 1;
+			update = true;
+		});
+		hotSpot.on("mousedown", function (evt) {
+			rotate = true;
+			update = true;
+		});
+		hotSpot.on("pressup", function (evt) {	
+			this.alpha = .2;
+			rotate = false;
+			update = true;
+		});
+		var dragger = new createjs.Container();
+		dragger.saved = false;
+		dragger.x = xloc;
+		dragger.y = yloc;
+		dragger.regX = radius/2;
+		dragger.regY = radius/2; 
+		dragger.label = text;
+		dragger.index = -1;
+		dragger.rI = -1;
+		dragger.addChild(bg,hotSpot,text);
+		stage.addChild(dragger);
+		dragger.scaleX = dragger.scaleY = dragger.scale = 1;
+		dragger.on("rollover", function (evt) {
+				this.scaleX = this.scaleY = this.scale * 1.02;
+				update = true;
+
+		});
+		dragger.on("mousedown", function (evt) {
+				dragger.oldRotation = dragger.rotation;
+				dragger.oldX = dragger.x;
+				dragger.oldY = dragger.y;
+				this.parent.addChild(this);
+//                    this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+				this.offset = {x: this.x - evt.stageX + radius/2, y: this.y - evt.stageY+radius/2};
+				update = true;
+		});
+		dragger.on("rollout", function (evt) {
+				rotateLeft = rotateRight = false;
+				this.scaleX = this.scaleY = this.scale;
+				update = true;
+		});			
+		dragger.on("pressmove",function(evt) {
+				rotateLeft = rotateRight = false;
+				if (!rotate) {
+					evt.currentTarget.x = evt.stageX + this.offset.x - this.regX;
+					evt.currentTarget.y = evt.stageY + this.offset.y - this.regY;
+				} else {
+
+					var rx = evt.stageX - dragger.oldX;
+					var ry = evt.stageY - dragger.oldY;
+					if (Math.abs(rx) < 1 && ry >= 0)
+						newRotation = 90;
+					else if (Math.abs(rx) < 1 && ry < 0)
+						newRotation = 270;
+					else {
+						var newAngle = Math.atan(ry/rx);
+						if (rx > 0) {
+							newAngle = -newAngle;
+							console.log("setting > 1 and 4 rotation with angle " + newAngle);
+							var newRotation = -(newAngle*180/Math.PI)%360;
+						} else if (ry <0){
+							newAngle = -newAngle;
+							console.log("setting quadrant 2 rotation with angle " + newAngle);
+							var newRotation = (180-(newAngle*180/Math.PI))%360;
+						} else {
+	//						newAngle = -newAngle;
+							console.log("setting quadrant 3 rotation with angle " + newAngle);
+							var newRotation = (180+newAngle*180/Math.PI)%360;
+						}
+					}
+					console.log("new rotation " + newRotation);
+					evt.currentTarget.rotation = newRotation;
+					evt.currentTarget.label.rotation = -newRotation;
+					nextRotation[rotationIndex] = (evt.currentTarget.rotation + 360/angle)%360;
+						
+				}
+				update = true;
+		});
+		dragger.on("pressup", function (evt) {	
+			if (rotate)
+				return;
+			rotateLeft = rotateRight = false;
+			if (Math.abs(dragger.oldX - dragger.x) < 8 && Math.abs(dragger.oldY - dragger.y) < 8) {
+//				placePie(evt,radius,angle,dragger);
+				update = true;
+				return;
+			}
+			var sideLimit = 0;
+			if (angle == 1)
+				sideLimit = radius;
+			if (evt.stageX < 265 || evt.stageX > 590 || evt.stageY < 10 || evt.stageY > 470) {
+					if (dragger.index != -1) {
+//							rods.splice(dragger.index,1);
+							deleteRod(dragger);
+					}
+					else {
+						activeCount++;
+						createjs.Tween.get(dragger, {loop: false}, null, false) 
+						.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+						.call(handleTweenComplete);
+					}
+			} else {
+				if (dragger.saved == false) {
+					dragger.index = rodCount;
+//					rodCount++;
+//					rods.push(dragger);
+					dragger.saved= true;
+					//console.log("new Pie");
+					initPie(xloc,yloc,radius,angle,textColor,color,label);
+					if (currentAlpha == .2) {
+						text.color = "#000000";
+						bg.alpha = currentAlpha;
+					}
+				}
+				placePie(evt,radius,angle,dragger);
+				rotateLeft = rotateRight = false;
+			}						
+			update = true;
+		});
+		dragger.on("click", function (evt) {
+			if (rotate)
+				return 
+//			if (dragger.x > 260)
+//				return;
+			if (Math.abs(dragger.oldX - dragger.x) > 8 || Math.abs(dragger.oldY - dragger.y) > 8)
+				return;
+			if (dragger.saved == true && dragger.x == targetX && dragger.y == targetY) 
+				return;
+			if (dragger.saved == true) {
+				activeCount++;
+				createjs.Tween.get(dragger, {loop: false}, null, false) // get a new tween targeting circle
+					.to({x: targetX, y: targetY, rotation:nextRotation[rotationIndex]}, 1000, createjs.Ease.get(1)) 
+					.call(handleTweenComplete);
+				dragger.label.rotation = -nextRotation[rotationIndex]
+				nextRotation[dragger.rI] = (nextRotation[dragger.rI] + 360/angle)%360;
+				nextRotation[rotationIndex] = (nextRotation[rotationIndex] - 360/angle)%360;
+				dragger.rI = rotationIndex;
+			} else {
+				dragger.rI = rotationIndex;
+				if (currentAlpha == .2) {
+						text.color = "#000000";
+						bg.alpha = currentAlpha;
+					}
+					activeCount++;
+					createjs.Tween.get(dragger, {loop: false}, null, false) // get a new tween targeting circle
+						.to({x: targetX, y: targetY, rotation:nextRotation[rotationIndex]}, 1000, createjs.Ease.get(1)) 
+						.call(handleTweenComplete);
+					dragger.label.rotation = -nextRotation[rotationIndex]
+					dragger.index = rodCount;
+					nextRotation[rotationIndex] = (nextRotation[rotationIndex] - 360/angle)%360;
+	//					rodCount++;
+	//					rods.push(dragger);
+					dragger.saved = true;
+					//console.log("New Pie Click");
+					initPie(xloc,yloc,radius,angle,textColor,color,label);
+				rotateLeft = rotateRight = false;
+			}
+			update = true;
+		});
+		rodCount++;
+		rods.push(dragger);
+		return dragger;
+	}
+ 
+	function setTargetZone(zone) {
+			target = hotSpots[zone];
+			target.selected = true;
+			target.alpha = 1;
+			for (var i = 0; i < zoneCount; i++) {
+				if (i != zone)
+					hotSpots[i].alpha = .2;
+			}
+			targetX = target.parent.xloc;
+			targetY = target.parent.yloc;
+			rotationIndex = zone;
+	}
+    function placePie(evt,radius,angle,dragger) {
+    	var tX = targetX, 
+    	    tY = targetY,
+    	    rI = rotationIndex;
+    	var inTarget = false;
+    	console.log("Placing Pie");
+    	for (var i = 0; i < 4; i++) {
+    		if (targetZones[i].visible == true && 
+    			Math.sqrt(Math.pow(evt.stageX - targetZones[i].xloc,2)+Math.pow(evt.stageY-targetZones[i].yloc,2)) < radius) {
+    			tX = targetZones[i].xloc;
+    			tY = targetZones[i].yloc;
+    			rI = i;
+    			inTarget = true;
+    		    console.log("In target " + i);
+			  setTargetZone(i);
+    		  break;
+    		}
+    	}
+		dragger.rI = -1;
+    	if (inTarget) {
+			var rx = evt.stageX - tX;
+			var ry = evt.stageY - tY
+			if (Math.abs(evt.stageX - tX) < 1)
+				var newAngle = Math.PI/2;
+			else 
+				var newAngle = Math.abs(Math.atan(ry/rx));
+			//console.log("New Angle before adjust x: " + rx + ",y: " + ry + ",angle: " + newAngle);
+			if (rx >= 0 && ry <= 0)  {
+				newAngle = newAngle;
+				//console.log("quadrant 1 " + newAngle);
+			}
+			else if (rx >= 0 && ry >= 0) {
+				newAngle = 2*Math.PI - newAngle; 
+				//console.log("Quadrant 4 " + newAngle);
+			}
+			else if (rx <= 0 && ry >= 0) {
+				newAngle = Math.PI + newAngle;
+				//console.log("Quadrant 3 " + newAngle);
+			} else {
+				newAngle = Math.PI - newAngle;
+				//console.log("Quadrant 2 " + newAngle);
+			}
+
+			for (var i = 0; i < angle; i++) {
+				if (newAngle >= (i*Math.PI*2)/angle && newAngle < ((i+1)*Math.PI*2)/angle) {
+					nextRotation[rI] = -i*360/angle;
+					//console.log(angle + "," + newAngle + "," + (i*Math.PI*2)/angle + "," + ((i+1)*Math.PI*2)/angle);
+					//console.log("Spot found");
+					break;
+				}
+			}
+//			if (nextRotation[rI] - dragger.rotation > 180)
+//				nextRotation[rI] = -(360-nextRotation[rI]);
+			console.log("Begin Tween");		
+			activeCount++;
+			dragger.rI = rI;
+			createjs.Tween.get(dragger, {loop: false}, null, false) 
+			.to({x: tX, y: tY,rotation:nextRotation[rI]}, 500, createjs.Ease.get(1)) 
+			.call(handleTweenComplete);
+			dragger.label.rotation = - nextRotation[rI];
+			nextRotation[rI] = (nextRotation[rI] - 360/angle)%360;	
+			update = true;
+		}
+	}		
+
+	function drawPie(xloc,yloc,radius,angle,colorText,color,label) {
+		var container = new createjs.Container();
+
+		var bg = new createjs.Shape();
+		bg.graphics.mt(xloc,yloc);
+		bg.graphics.beginFill(color);
+		//.lt(xloc,yloc-height);
+		bg.graphics.arc(xloc, yloc, radius, 0,-Math.PI*2/angle,true);
+		bg.graphics.lt(xloc, yloc);
+		bg.graphics.lt(xloc+radius,yloc);
+		bg.graphics.lt(xloc,yloc).endFill();
+
+		bg.graphics.mt(xloc,yloc);
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000");
+		bg.graphics.arc(xloc, yloc, radius, 0,-Math.PI*2/angle,true);
+		if (angle != 1) {
+			bg.graphics.lt(xloc, yloc);
+			bg.graphics.lt(xloc+radius,yloc);
+		}
+
+		container.addChild(bg);
+		return container;
+	}
+
+
+	function drawTarget(xloc,yloc,radius,visible,zoneIndex) {
+		var container = new createjs.Container();
+
+		var bg = new createjs.Shape();
+		bg.graphics.setStrokeDash([5,5],2).beginStroke("#000000");
+		bg.graphics.beginFill("#FFF8DC").drawCircle(xloc, yloc, radius).endFill();
+		
+
+		container.visible = visible;
+		container.addChild(bg);
+		container.xloc = xloc;
+		container.yloc = yloc;
+		var hotSpot = new createjs.Shape();
+		hotSpot.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hotSpot.graphics.drawCircle(xloc-radius+10, yloc-radius+10, 10).endFill();	
+		hotSpot.regX = 1.5;
+		hotSpot.regY = -1.5;
+		hotSpot.index = zoneIndex;
+		if (zoneCount == 0) {
+			hotSpot.selected = true;
+			hotSpot.alpha = 1;
+		} else {
+			hotSpot.alpha=.2;
+			hotSpot.selected = false;
+		}
+		hotSpot.on("rollover", function (evt) {
+			if (!this.selected)
+				this.alpha = .6;
+			update = true;   
+		});
+		hotSpot.on("rollout", function (evt) {
+			if (!this.selected)
+				this.alpha = .2;
+			update = true;
+		});
+		hotSpot.on("click", function (evt) {
+			this.selected = true;
+			this.alpha = 1;
+			for (var i = 0; i < zoneCount; i++) {
+				if (i != this.index)
+					hotSpots[i].alpha = .2;
+			}
+			targetX = this.parent.xloc;
+			targetY = this.parent.yloc;
+			rotationIndex = hotSpot.index;
+		    update = true;
+
+		});
+		container.hotSpot = hotSpot;
+		bg.on("click", function(et) {
+		// Disabled
+/*			console.log("bg click");
+			hotSpot.selected = true;
+			hotSpot.alpha = 1;
+			for (var i = 0; i < zoneCount; i++) {
+				if (i != hotSpot.index)
+					hotSpots[i].alpha = .2;
+			}
+			targetX = xloc;
+			targetY = yloc;
+			rotationIndex = hotSpot.index;
+		    update = true;			
+*/
+		});
+
+		
+/*		var cT = new createjs.Shape();
+		cT.graphics.beginFill("#FF0000").setStrokeStyle(2);
+		cT.graphics.drawCircle(xloc+radius-10, yloc-radius+10, 5).endFill();	
+		cT.alpha = .2;
+		cT.on("rollover", function (evt) {
+			if (!this.selected)
+				this.alpha = .6;
+			update = true;   
+		});
+		cT.on("rollout", function (evt) {
+			if (!this.selected)
+				this.alpha = .2;
+			update = true;
+		});
+		cT.on("click", function (evt) {
+			for (var i = 0; i < rodCount; i++) {
+				if (rods[i].x == xloc &&
+					rods[i].y == yloc) {
+					var deadman = rods[i];
+					deleteRod(deadman);
+//					rods.splice(i,1);
+				}
+			}
+			update = true;
+		});
+*/		
+		
+		container.addChild(hotSpot);
+		hotSpots[zoneIndex] = hotSpot;
+//		if (zoneCount == 0)
+//			hotSpot.visible = false;
+		targetZones[zoneCount++] = container;
+		return container;
+	}
+
+	function createStage() {
+		var trashCanImage = new Image();
+		trashCanImage.src = "../images/TrashCan.JPG";
+		trashCanImage.onload=handleTrashCanLoad;
+		var resetImage = new Image();
+		resetImage.src = "../images/resetButton.png";
+		resetImage.onload = handleResetButtonLoad;
+		var graphics = new createjs.Graphics();
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").drawRect(5, 5, 595, 470);
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").drawRect(10, 10, 250, 460);
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").beginFill("#FFF8DC").drawRect(265, 10, 330, 460);
+        graphics.alpha=0.25;
+        for (var i = 0; i < 30; i++)
+        	graphics.mt(265,25+i*15).lt(595,25+i*15);
+        for (var i = 0; i < 21; i++)
+        	graphics.mt(280+i*15,10).lt(280+i*15,470);
+        
+		var shape = new createjs.Shape(graphics);
+        container.addChild(shape);
+        createTransparentHotSpot(160,455);
+        createTransparentHotSpotText(15,460);
+		createDropZoneSelect(280,445);
+		createHideLabelsHotSpotText(172,460,"Hide Labels");
+		createHideLabelsHotSpot(250,455);
+		stage.update();
+	}
+	
+	function handleTrashCanLoad(event) {
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+
+		bitmap.x = 130;
+		bitmap.y = 50;
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+		bitmap.on("click", function (evt) {
+			for (var i = 0; i < rodCount;) {
+				var x, y, z;
+				x = rods[i].x;
+				y = rods[i].y;
+				z = inZone(x,y);
+//				console.log(x + " " + y + " " + z + " " + rotationIndex);
+				if (z == rotationIndex+1) {
+					deleteRod(rods[i]);
+//					rods.splice(i,1);
+					rodCount--;
+				} else
+					i++;
+			}
+			nextRotation[rotationIndex] = 0;
+			update = true;
+		});
+		update = true;
+	}
+	function handleResetButtonLoad(event) {
+	
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		var text = new createjs.Text("Start Over", "12px Arial", "#000000");
+        text.x = 20;
+        text.y = 90;
+        text.textBaseline = "alphabetic";
+        container.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 50;
+		bitmap.y = 50
+		bitmap.on("click",function (evt) {
+			resetAllZones();
+			update = true;
+		});
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+		update = true;
+	}
+	
+	function deleteRod(bitmap) {
+		var count = 0;
+		while (count < rods.length) {
+			if (rods[count] == bitmap) {
+				//console.log("rod round");
+				activeCount++;
+				createjs.Tween.get(bitmap)
+				.to({alpha:0, visible:false}, 500)
+				.call(handleTweenComplete, rods[count]);
+				rods.splice(count,1);
+				break;
+			}
+			count++;
+		}
+	}
+	
+	function handleTweenComplete(bitmap) {
+		activeCount--;
+		if (bitmap != null)
+			stage.removeChild(bitmap);
+		update = true;			
+	}
+
+	function getParameterByName(name, url) {
+		if (!url) url = window.location.href;
+		name = name.replace(/[\[\]]/g, "\\$&");
+		var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+			results = regex.exec(url);
+		if (!results) return null;
+		if (!results[2]) return '';
+		return decodeURIComponent(results[2].replace(/\+/g, " "));
+	}
+	function getOut() {
+		var outtxt = num100*100+num10*10+num1; 
+		if (qn != null) {
+			parent.postMessage(qn+"::"+outtxt,'*');
+	//		alert(qn+"::"+outtxt);
+		}	
+	}
+	function setLayer(layer){
+		var check = "&#10004;";
+		if (currentAlpha == .2) {
+
+			currentAlpha = 1;
+			document.getElementById("layerOne").innerHTML = "&nbsp;";
+		} else {
+			currentAlpha = .2;
+
+			document.getElementById("layerOne").innerHTML = "&#10004;";
+		}
+		update = true;
+	}
+
+	function setZones(newZones){ 
+		rotationIndex = 0;
+		zones = newZones;
+		for (var i = 0; i < 4; i++) 
+			dropZones[i].alpha = (i == newZones - 1 ? 1 : .2);
+		resetZones();
+	}
+
+	function resetAllZones()  {
+
+		for (var i = 0; i < 4;i++) {
+//			targetZones[i].visible = false;
+//			hotSpots[i].alpha=.2;
+//			dropZones[i].alpha = .2;
+			nextRotation[i] = 0;
+		}
+/*		for (var j = 0; j < zones; j++) {
+			targetZones[j].visible = true;
+		}
+//		hotSpots[0].alpha = 1;
+//		dropZones[0].alpha = 1;
+		targetX = 340;
+		targetY = 100;
+	 */
+		for (var i = 0; i < rodCount;) {
+			if (rods[i].saved == true) {
+			  deleteRod(rods[i]);
+//			  rods.splice(i,1);
+			  rodCount--;
+			} else
+				i++;
+		}
+//		rodCount = 0;
+	//	rotationIndex = 0;
+		update = true;
+	}
+	function resetZones()  {
+		hotSpots[0].alpha = 1;
+		for (var i = 1; i < 4;i++) {
+			hotSpots[i].alpha = .2;
+		}
+		targetX = 340;
+		targetY = 100;
+		for (var j = 3; j >= zones; j--) {
+		  targetZones[j].visible = false;
+		  hotSpots[j].alpha = .2;
+		}
+		for (var j = 0; j < zones; j++) {
+			targetZones[j].visible = true;
+
+		}
+		hotSpots[0].alpha = 1;
+		for (var i = 0; i < rodCount;) {
+			var x, y, z;
+			x = rods[i].x;
+			y = rods[i].y;
+			z = inZone(x,y);
+			if (z > zones) {
+				deleteRod(rods[i]);
+//				rods.splice(i,1);
+				rodCount--;
+			} else
+			  i++;
+		}
+		update = true;
+	}
+	function inZone(xloc,yloc) {
+		switch (xloc + yloc) {
+			case 440 : 	return 1; break;
+			case 610 : return 2; break;
+			case 640 : return 3; break;
+			case 810 : return 4; break;
+		}
+	}
+	function createDropZoneSelect(xloc,yloc) {
+		var dzContainer = new createjs.Container();
+		dzContainer.x = xloc;
+		dzContainer.y = yloc;
+		var dzText = new createjs.Text("Drop Zones:  1.         2.         3.         4.","12px Ariel", "#000000");
+		dzTextBaseline = "alphabetic";
+		dzText.y = 4;
+		dzContainer.addChild(dzText); 
+		dropZones[0] = dropZoneHotSpot(90,0,1,1);  
+		dropZones[1] = dropZoneHotSpot(125,0,2,.2);  
+		dropZones[2] = dropZoneHotSpot(160,0,3,.2);  
+		dropZones[3] = dropZoneHotSpot(200,0,4,.2);  
+		dzContainer.addChild(dropZones[0],dropZones[1],dropZones[2],dropZones[3]);
+		stage.addChild(dzContainer);
+	}
+	
+	function dropZoneHotSpot(xloc,yloc,index,alpha) {
+		var hs = new createjs.Shape();
+		var radius = 10;
+		hs.index = index;
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(xloc, yloc+10, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.selected = false;
+		hs.alpha = alpha;
+		hs.on("click", function (evt) {
+			setZones(index);
+			update = true;
+		});		
+		return hs;
+	}
+	
+
+	function createTransparentHotSpotText(xloc,yloc,label) {
+		var hsText = new createjs.Text("Add Transparent Pieces", "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        stage.addChild(hsText);
+    }
+	
+	function createTransparentHotSpot(xloc,yloc) {
+		var hs = new createjs.Shape();
+		var radius = 10;
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(xloc-radius+10, yloc-radius+10, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.selected = false;
+		hs.alpha = .2;
+		hs.on("click", function (evt) {
+			if (currentAlpha == .2) {
+				currentAlpha = 1;
+				this.alpha = .2;
+			} else {
+				currentAlpha = .2;
+				this.alpha = 1;
+			}	
+			update = true;
+		});		
+		stage.addChild(hs);
+	}
+	function createHideLabelsHotSpotText(xloc,yloc,label) {
+		var hsText = new createjs.Text("Hide Labels", "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        stage.addChild(hsText);
+    }
+	
+	function createHideLabelsHotSpot(xloc,yloc) {
+		var hs = new createjs.Shape();
+		var radius = 10;
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(xloc-radius+10, yloc-radius+10, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.selected = false;
+		hs.alpha = .2;
+		hs.on("click", function (evt) {
+			if (this.alpha == .2) {
+				for (var i = 0; i < rods.length;i++) 
+					rods[i].label.visible = false;
+				this.alpha = 1;
+				hideLabels = true;
+			} else {
+				for (var i = 0; i < rods.length;i++) 
+					rods[i].label.visible = true;
+				this.alpha = .2;
+				hideLabels = false;
+			}				
+			update = true;
+		});		
+		stage.addChild(hs);
+	}
+	
+</script>
+</head>
+<body onload="init();">
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
+    <canvas id="testCanvas" width="600px" height="500px"></canvas>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Rounding using Number Lines</title>
+    <meta name="keywords" content="Virtual Manipulative, Rounding, Number Line, OER, Open Education Resources, math, math manipulative, problem solving, pattern blocks, algebra">
+	<meta name="description" content="OpenVML - OER Library of Virtual Manipulatives.  Rounding through Number Lines">
+
+	<script src="../lib/easeljs-NEXT.combined.js"></script>
+	<script type="text/javascript" src="../lib/tweenjs-NEXT.combined.js"></script>
+
+<script id="editable">
+	/*
+	   Description:  Developed by William Meacham and Frank Marfai in collaboration with Phoenix College and Scottsdale Community College.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+	*/
+	var canvas, stage, container;
+	var tic1 = 5, tic2 = 6;
+	var xMin = 10;
+	var xMax = 610;
+//	var yLoc = 300;
+	var step = 50;
+	var numberLine1,numberLine2,numberLine3;
+	var newNL1 = null, newNL2 = null, newNL3 = null;
+	var hS1,hS2,hS3;
+	var increment = 10;
+	var currentVal = 55;
+	var scrollCount= 0;
+	var scrolling = false;
+	var zoom1,zoom2;
+	var update = false;
+	
+	
+	function init() {
+		qn = getParameterByName("qn");
+		initValue = getParameterByName("inVal");
+		if (initValue != null && initValue != "") {
+			inRods = initValue.split(':');
+		}
+		var qt = getParameterByName("qt");
+		if (qt != null && qt != "") {
+			questionText = qt;
+		}
+		// create stage and point it to the canvas:
+		canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage(canvas);
+
+		// enable touch interactions if supported on the current device:
+		createjs.Touch.enable(stage);
+
+		// enabled mouse over / out events
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
+
+	    container = new createjs.Container();
+		stage.addChild(container);
+		drawStage();
+		createjs.Ticker.setFPS(20);
+		createjs.Ticker.addEventListener("tick", tick);
+		resize();
+		update = true;
+	}
+	function resize() {
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+		var height = window.innerHeight*.95;
+		var ratio = canvas.width/canvas.height;
+		var width = height * ratio;
+		
+		canvas.style.width = width+'px';
+		canvas.style.height = height+'px';
+	}
+
+	function tick(event) {
+		if (update || scrolling) {
+			stage.update(event);
+			update = false;
+       }
+    }
+
+	function stop() {
+		createjs.Ticker.removeEventListener("tick", tick);
+	}
+
+	function updateHotSpots() {
+		
+		hS1.spot.x = getSpotLoc(numberLine1.tic0,numberLine1.incr,currentVal);
+		hS2.spot.x = getSpotLoc(numberLine2.tic0,numberLine2.incr,currentVal);
+		hS3.spot.x = getSpotLoc(numberLine3.tic0,numberLine3.incr,currentVal);
+		update = true;
+	}
+	
+	function getSpotLoc(tic0,incr,val) {
+		return (val >= 0) ? (val - tic0)/incr*500 : (val-tic0)/incr*500;
+	}
+	function handleComplete() {
+		scrolling = false;
+	}
+
+	function drawZooms() {
+		drawZoom1();
+		drawZoom2();
+		update = true;
+	}
+
+	function drawZoom1() {
+		var i1 = numberLine2.tic0;
+		var i2 = numberLine2.incr;
+		var i3 = numberLine2.tic0 + numberLine2.incr;
+		var i4 = numberLine3.tic0;
+		var i5 = numberLine3.incr;
+
+		var shift = Math.pow(10,numberLine1.precision-1);
+		var cV = Math.floor(currentVal*shift)/shift;
+		var i6 = Math.floor(currentVal/(numberLine3.incr/10))*(numberLine3.incr/10);
+		var i7 = i6 + numberLine3.incr/10;
+		var x1 = getSpotLoc(i1,i2,i1) + 40;
+		var x2 = getSpotLoc(i1,i2,i3) + 40;
+		var x3 = getSpotLoc(i4,i5,i6) + 40;
+		var x4 = getSpotLoc(i4,i5,i7) + 40;
+		var y1 = 250;
+		var y2 = 120;
+		if (zoom1 == null) {
+			zoom1 = new createjs.Shape();
+			stage.addChild(zoom1);
+		} else
+			zoom1.graphics.clear();
+		zoom1.alpha = .4;
+		zoom1.graphics.setStrokeStyle(2).beginStroke("blue").beginFill("blue");
+		var cp1x = cp2x = (x2+x4)/2;
+		var cp1y = 150;
+		var cp2y = 240;
+		zoom1.graphics.mt(x2,y1).bt(cp1x,cp1y,cp2x,cp2y,x4,y2).lt(x3,y2);
+		cp1x = cp2x = (x1+x3)/2;
+		zoom1.graphics.bt(cp1x,cp2y,cp2x,cp1y,x1,y1).closePath().endFill();
+		update = true;
+	}
+	function drawZoom2() {
+		var i1 = numberLine1.tic0;
+		var i2 = numberLine1.incr;
+		var i3 = numberLine1.tic0 + numberLine1.incr;
+		var i4 = numberLine2.tic0;
+		var i5 = numberLine2.incr;
+		var i6 = Math.floor(currentVal/(numberLine2.incr/10))*(numberLine2.incr/10);
+		var i7 = i6 + numberLine2.incr/10;
+		var x1 = getSpotLoc(i1,i2,i1) + 40;
+		var x2 = getSpotLoc(i1,i2,i3) + 40;
+		var x3 = getSpotLoc(i4,i5,i6) + 40;
+		var x4 = getSpotLoc(i4,i5,i7) + 40;
+		var y1 = 450;
+		var y2 = 320;
+		if (zoom2 == null) {
+			zoom2 = new createjs.Shape();
+			stage.addChild(zoom2);
+		}
+		else
+			zoom2.graphics.clear();
+		zoom2.alpha = .4;
+		zoom2.graphics.setStrokeStyle(2).beginStroke("blue").beginFill("blue");
+		zoom2.graphics.setStrokeStyle(2).beginStroke("blue").beginFill("blue");
+		var cp1x = cp2x = (x2+x4)/2;
+		var cp1y = 350;
+		var cp2y = 440;
+		zoom2.graphics.mt(x2,y1).bt(cp1x,cp1y,cp2x,cp2y,x4,y2).lt(x3,y2);
+		cp1x = cp2x = (x1+x3)/2;
+		zoom2.graphics.bt(cp1x,cp2y,cp2x,cp1y,x1,y1).closePath().endFill();
+		update = true;
+	}
+	
+	function scrollDown() {
+		if (numberLine1.incr == 1000)
+			return;
+		scrolling = true;
+		var newPrecision = (numberLine3.precision > 0) ? numberLine3.precision-1 : numberLine3.precision;
+		newNL3 = createNumberLine(numberLine3.incr*10,numberLine3.x,-250,newPrecision,numberLine3.index);
+		console.log(stage.getChildIndex(hS3));
+		stage.addChildAt(newNL3,stage.getChildIndex(hS1));
+		createjs.Tween.get(newNL3, {loop: false}, null, false)
+			.to({y: numberLine3.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine3, {loop: false}, null, false)
+			.to({y: numberLine2.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine2, {loop: false}, null, false)
+			.to({y: numberLine1.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine1, {loop: false}, null, false)
+			.to({x: 10, y: 650}, 700, createjs.Ease.get(1))
+			.call(handleScrollDownTweenComplete);		
+	}
+	
+	function handleScrollUpTweenComplete() {
+		var deadNL = numberLine3;
+		numberLine3 = numberLine2;
+		numberLine2 = numberLine1;
+		numberLine1 = newNL1;
+		newNL1 = null;
+		stage.removeChild(deadNL);
+		hS1.numberLine = numberLine1;
+		hS2.numberLine = numberLine2;
+		hS3.numberLine = numberLine3;
+		updateHotSpots();
+		drawZooms();
+		scrolling = false;
+	}
+	
+	
+	function scrollUp() {
+		if (numberLine1.incr == .001)
+			return;
+		scrolling = true;
+		var newPrecision = (numberLine1.incr <= 10 ) ? numberLine1.precision+1 : numberLine1.precision;
+		newNL1 = createNumberLine(numberLine1.incr/10,numberLine1.x,650,newPrecision,numberLine1.index);
+		console.log(stage.getChildIndex(hS1));
+		stage.addChildAt(newNL1,stage.getChildIndex(hS1));
+		createjs.Tween.get(newNL1, {loop: false}, null, false)
+			.to({y: numberLine1.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine1, {loop: false}, null, false)
+			.to({y: numberLine2.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine2, {loop: false}, null, false)
+			.to({y: numberLine3.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine3, {loop: false}, null, false)
+			.to({x: 10, y: -150}, 500, createjs.Ease.get(1))
+			.call(handleScrollUpTweenComplete);		
+	}
+	
+	function handleScrollDownTweenComplete() {
+		var deadNL = numberLine1;
+		numberLine1 = numberLine2;
+		numberLine2 = numberLine3;
+		numberLine3 = newNL3;
+		newNL3 = null;
+		stage.removeChild(deadNL);
+		hS1.numberLine = numberLine1;
+		hS2.numberLine = numberLine2;
+		hS3.numberLine = numberLine3;
+		updateHotSpots();
+		drawZooms();
+		scrolling = false;
+	}
+	
+	function addScrollUp(xloc,yloc) {
+		var nB = new createjs.Container();
+		var a = new createjs.Shape();  
+		a.graphics.setStrokeStyle(2).beginStroke("blue");
+		a.graphics.beginFill("white").rr(0,0,25,64,3).endFill();
+		a.graphics.setStrokeStyle(4);
+		a.graphics.mt(13,53).lt(13,5).setStrokeStyle(1).beginFill("blue").lt(6,13).lt(20,13).lt(13,5).endFill();		
+		var t = new createjs.Text("Up", "10px Arial", "blue");
+		t.x = 5;
+		t.y = 68;
+		nB.addChild(a,t);
+		nB.regX = 30;
+		nB.regY = 10;
+		nB.x = xloc;
+		nB.y = yloc;
+		nB.scaleX = nB.scaleY = nB.scale = 1;
+		nB.name = "bmp_resetButton";
+		nB.cursor = "pointer";
+		nB.on("click",function (evt) {
+			if (!scrolling)
+				scrollUp();
+			update = true;
+		});
+		nB.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		nB.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale = 1;
+			update = true;
+		});
+		return nB;
+	}
+	
+	function addScrollDown(xloc,yloc) {
+		var nB = new createjs.Container();
+		var a = new createjs.Shape();  
+		a.graphics.setStrokeStyle(2).beginStroke("blue");
+		a.graphics.beginFill("white").rr(0,0,25,64,3).endFill();
+		a.graphics.setStrokeStyle(4);
+		a.graphics.mt(13,5).lt(13,53).setStrokeStyle(1).beginFill("blue").lt(6,45).lt(20,45).lt(13,53).endFill();
+		
+		var t = new createjs.Text("Down", "10px Arial", "blue");
+		t.x = 0;
+		t.y = 68;
+		nB.addChild(a,t);
+		nB.regX = 30;
+		nB.regY = 10;
+		nB.x = xloc;
+		nB.y = yloc;
+		nB.scaleX = nB.scaleY = nB.scale = 1;
+		nB.name = "bmp_resetButton";
+		nB.cursor = "pointer";
+		nB.on("click",function (evt) {
+			if (!scrolling)
+				scrollDown();
+			update = true;
+		});
+		nB.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		nB.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale = 1;
+			update = true;
+		});
+		return nB;
+	}
+
+	
+	function addScrollRight(xloc,yloc) {
+		var nB = new createjs.Container();
+		var a = new createjs.Shape();  // Next Button
+		a.graphics.setStrokeStyle(2).beginStroke("blue");
+		a.graphics.beginFill("white").rr(0,0,64,25,3).endFill();
+		a.graphics.setStrokeStyle(4);
+		a.graphics.mt(5,13).lt(53,13).setStrokeStyle(1).beginFill("blue").lt(45,6).lt(45,20).lt(53,13).endFill();
+		var t = new createjs.Text("Right", "10px Arial", "blue");
+		t.x = 20;
+		t.y = 30;
+		nB.addChild(a,t);
+		nB.regX = 30;
+		nB.regY = 10;
+		nB.x = xloc;
+		nB.y = yloc;
+		nB.scaleX = nB.scaleY = nB.scale = 1;
+		nB.name = "bmp_resetButton";
+		nB.cursor = "pointer";
+		nB.on("click",function (evt) {
+			currentVal += numberLine2.incr;
+			console.log(currentVal);
+			updateNumberLine();		
+			update = true;
+		});
+		nB.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		nB.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale = 1;
+			update = true;
+		});
+		return nB;
+	}
+	
+	function addScrollLeft(xloc,yloc) {
+		var nB = new createjs.Container();
+		var a = new createjs.Shape();  // Next Button
+		a.graphics.setStrokeStyle(2).beginStroke("blue");
+		a.graphics.beginFill("white").rr(0,0,64,25,3).endFill();
+		a.graphics.setStrokeStyle(4);
+		a.graphics.mt(5,13).lt(53,13).setStrokeStyle(1).beginFill("blue");
+		a.graphics.mt(5,13).lt(10,6).lt(10,20).lt(5,13).endFill();
+		var t = new createjs.Text("Left", "10px Arial", "blue");
+		t.x = 25;
+		t.y = 30;
+		nB.addChild(a,t);
+		nB.regX = 30;
+		nB.regY = 10;
+		nB.x = xloc;
+		nB.y = yloc;
+		nB.scaleX = nB.scaleY = nB.scale = 1;
+		nB.name = "bmp_resetButton";
+		nB.cursor = "pointer";
+		nB.on("click",function (evt) {
+			currentVal -= numberLine2.incr;
+			updateNumberLine();
+			update = true;
+		});
+		nB.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		nB.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale = 1;
+			update = true;
+		});
+		return nB;
+	}
+	
+	
+	function drawStage() {
+		numberLine1 = createNumberLine(1,     10, 450,1,1);
+		numberLine2 = createNumberLine(10,    10, 250,0,2);
+		numberLine3 = createNumberLine(100,   10, 50,0,3);
+		stage.addChild(numberLine1,numberLine2,numberLine3); 
+		hS1 = createHotSpot(numberLine1,1);
+		hS2 = createHotSpot(numberLine2,2);
+		hS3 = createHotSpot(numberLine3,3);
+		stage.addChild(hS1,hS2,hS3);
+		stage.addChild(addScrollRight(370,535));
+		stage.addChild(addScrollLeft(200,535));
+		stage.addChild(addScrollUp(280,535));
+		stage.addChild(addScrollDown(320,535));
+		drawZoom1();
+		drawZoom2();
+		update = true;
+	}
+
+	function updateNumberLine() {
+		scrolling = true;
+		var xloc = (currentVal < numberLine2.tic0) ? -500 : 500;
+		var deadXloc = (currentVal < numberLine2.tic0) ? 500 : -500;
+		newNL1 = createNumberLine(numberLine1.incr,xloc,numberLine1.y,numberLine1.precision,numberLine1.index);
+		stage.addChildAt(newNL1,stage.getChildIndex(hS1));
+		newNL2 = createNumberLine(numberLine2.incr,xloc,numberLine2.y,numberLine2.precision,numberLine2.index);
+		stage.addChildAt(newNL2,stage.getChildIndex(hS2));
+		if (currentVal < numberLine3.tic0 || currentVal >= numberLine3.tic0 + numberLine3.incr) {
+			console.log("new nl 3");
+			newNL3 = createNumberLine(numberLine3.incr,xloc,numberLine3.y,numberLine3.precision,numberLine3.index);
+			stage.addChildAt(newNL3,stage.getChildIndex(hS3));
+			createjs.Tween.get(newNL3, {loop: false}, null, false)
+				.to({x: 10, y: numberLine3.y}, 500, createjs.Ease.get(1));
+			createjs.Tween.get(numberLine3, {loop: false}, null, false)
+				.to({x: deadXloc, y: numberLine3.y, alpha: 0}, 500, createjs.Ease.get(1));
+		} else {
+			createjs.Tween.get(hS3.spot, {loop: false}, null, false)
+				.to({x: hS3.spot.x + (xloc/10), y: hS3.spot.y}, 500, createjs.Ease.get(1));
+		}
+		createjs.Tween.get(newNL1, {loop: false}, null, false)
+			.to({x: 10, y: numberLine1.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine1, {loop: false}, null, false)
+			.to({x: deadXloc, y: numberLine1.y, alpha: 0}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(newNL2, {loop: false}, null, false)
+			.to({x: 10, y: numberLine2.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine2, {loop: false}, null, false)
+			.to({x: deadXloc, y: numberLine2.y,alpha:0}, 550, createjs.Ease.get(1)) 
+			.call(handleNLTweenComplete);
+		update = true;
+	}
+	function updateNumberLine1() {
+		scrolling = true;
+		var xloc = (currentVal < numberLine2.tic0) ? -500 : 500;
+		var deadXloc = (currentVal < numberLine2.tic0) ? 500 : -500;
+		newNL1 = createNumberLine(numberLine1.incr,xloc,numberLine1.y,numberLine1.precision,numberLine1.index);
+		stage.addChildAt(newNL1,stage.getChildIndex(hS1));
+//		hS1.spot.x = getSpotLoc(newNL1.tic0,newNL1.incr,currentVal);
+		createjs.Tween.get(newNL1, {loop: false}, null, false)
+			.to({x: 10, y: numberLine1.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine1, {loop: false}, null, false)
+			.to({x: deadXloc, y: numberLine1.y, alpha: 0}, 500, createjs.Ease.get(1))
+			.call(handleNL1TweenComplete);
+	
+		update = true;
+	}
+
+	function updateNumberLine2() {
+		scrolling = true;
+		var xloc = (currentVal < numberLine2.tic0) ? -500 : 500;
+		var deadXloc = (currentVal < numberLine2.tic0) ? 500 : -500;
+		newNL2 = createNumberLine(numberLine2.incr,xloc,numberLine2.y,numberLine2.precision,numberLine2.index);
+//		hS2.spot.x = getSpotLoc(newNL2.tic0,newNL2.incr,currentVal);		
+		stage.addChildAt(newNL2,stage.getChildIndex(hS2));
+		createjs.Tween.get(newNL2, {loop: false}, null, false)
+			.to({x: 10, y: numberLine2.y}, 500, createjs.Ease.get(1));
+		createjs.Tween.get(numberLine2, {loop: false}, null, false)
+			.to({x: deadXloc, y: numberLine2.y, alpha: 0}, 500, createjs.Ease.get(1))
+			.call(handleNL2TweenComplete);
+		update = true;
+	}	
+
+	function handleNL1TweenComplete() {
+		var deadNL1 = numberLine1;
+		numberLine1 = newNL1;
+		hS1.numberLine = newNL1;
+		stage.removeChild(deadNL1);
+		updateHotSpots();
+		drawZooms();
+//		hS1.spot.x = getSpotLoc(newNL1.tic0,newNL1.incr,currentVal);	
+		scrolling = false;
+	}
+	function handleNL2TweenComplete() {
+		var deadNL2 = numberLine2;
+		numberLine2 = newNL2;
+		hS2.numberLine = newNL2;
+		stage.removeChild(deadNL2);	
+		updateHotSpots();
+		drawZooms();
+		scrolling = false;
+	}
+		
+	function handleNLTweenComplete() {
+		var deadNL1 = numberLine1;
+		var deadNL2 = numberLine2;
+		numberLine1 = newNL1;
+		hS1.numberLine = newNL1;
+		numberLine2 = newNL2;
+		hS2.numberLine = newNL2;
+		stage.removeChild(deadNL1);
+		stage.removeChild(deadNL2);
+		if (newNL3 != null) {
+			var deadNL3 = numberLine3;
+			numberLine3 = newNL3;
+			hS3.numberLine = newNL3;
+			newNL3 = null;
+			stage.removeChild(deadNL3);
+		}
+		scrolling = false;
+		updateHotSpots();
+		drawZooms();
+		update = true;
+	}
+		
+	function createHotSpot(numberLine,index) {
+		var hotSpot = new createjs.Container();
+		var spot = new createjs.Shape();
+		hotSpot.index = index;
+		spot.graphics.beginFill("RED");
+		spot.graphics.drawCircle(10, 20, 10).endFill();	
+//		spot.regX = 5;
+//		spot.regY = 10;
+		spot.x = getSpotLoc(numberLine.tic0,numberLine.incr,currentVal);
+		spot.alpha = .5;
+		hotSpot.x = numberLine.x+20;
+		hotSpot.y = numberLine.y;
+		hotSpot.numberLine = numberLine;
+//		if ( numberLine.index == 2) {
+			spot.cursor = "move";
+			spot.scaleX = spot.scaleY = spot.scale = 1;	
+			spot.on("rollover", function (evt) {
+				spot.scaleX = spot.scaleY = spot.scale = 1.02;		
+				this.parent.addChild(this);
+				this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+				update = true;   
+			});
+			spot.on("rollout", function (evt) {
+				spot.scaleX = spot.scaleY = spot.scale = 1;
+				update = true;
+			});
+			spot.on("mousedown", function (evt) {
+			});
+			spot.on("pressup", function (evt) {	
+				if (evt.stageX < 40)
+					this.x = 0;
+				else if (evt.stageX > 540)
+					this.x = 500;
+				else
+					this.x = evt.stageX + this.offset.x;			
+				var perc = Math.round(this.x/12.5)*12.5/500;
+				var shift = Math.pow(10,(hotSpot.numberLine.precision+1));
+				currentVal = (numberLine1.tic0 >= 0) ? hotSpot.numberLine.tic0 + hotSpot.numberLine.incr*perc : hotSpot.numberLine.tic0 + hotSpot.numberLine.incr*perc ;
+console.log(currentVal);
+				//Math.round((hotSpot.numberLine.tic0 + hotSpot.numberLine.incr*perc)* shift)/shift;
+				if (currentVal == numberLine2.tic0+numberLine2.incr || currentVal == numberLine3.tic0 + numberLine3.incr) {
+					updateNumberLine();						
+				} else {
+					if (currentVal > numberLine1.tic0 + numberLine1.incr || currentVal < numberLine1.tic0)  {
+						console.log(currentVal + ":" + numberLine1.tic0 + ":" + numberLine1.incr);
+						updateNumberLine1();
+					}
+					if (currentVal > numberLine2.tic0 + numberLine2.incr || currentVal < numberLine2.tic0) {
+						console.log(currentVal + ":" + numberLine2.tic0 + ":" + numberLine2.incr);
+						updateNumberLine2();
+					}
+				}
+				if (!scrolling) {
+					updateHotSpots();
+					drawZooms();
+				}
+				update = true;
+			});
+			spot.on("pressmove", function (evt) {
+				if (evt.stageX < 40)
+					this.x = 0;
+				else if (evt.stageX > 540)
+					this.x = 500;
+				else
+					this.x = evt.stageX + this.offset.x;
+				update = true;
+				
+			});
+		hotSpot.spot = spot;
+		hotSpot.addChild(spot);
+		hotSpot.name="hotSpot";
+		return hotSpot;
+	}
+
+	function createNumberLine(incr, xLoc,yLoc,precision,index) {
+		var tic0 = Math.floor(currentVal/incr) * incr;
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		bg.graphics.ss(0).s("CYAN").beginFill("CYAN");
+		bg.graphics.dr(0,0,590,70).endFill();
+		bg.graphics.setStrokeStyle(2).beginStroke("#000000");
+		bg.graphics.mt(0,20).lt(560,20);
+		bg.graphics.setStrokeStyle(4).mt(30,5).lt(30,35).mt(530,5).lt(530,35).setStrokeStyle(2);
+		for (j = 1; j < 10; j++) {
+			bg.graphics.mt(30+j*50,12).lt(30+j*50,28);
+		}
+		c.addChild(bg);
+		for (var i = 0; i <2; i++) {
+			var nText = tic0 + i*incr;
+			nText = precision > 0 ? nText.toFixed(precision-1) : nText;
+			var n0 = new createjs.Text(""+nText, "14px Arial", "#000000");
+			n0.x = 30+500*i;
+			n0.y = 50;
+			n0.textAlign="center";
+			n0.textBaseline = "alphabetic";
+			c.addChild(n0);
+		}
+		for (i = 1; i < 10; i++) {
+			var nText = tic0+ i*incr/10;
+			nText = nText.toFixed(precision);
+			var n = new createjs.Text(""+nText, "12px Arial", "#000000");
+			n.x = 30+step*i;
+			n.y = (i%2 == 0) ? 42 : 55;
+			n.textAlign="center";
+			n.textBaseline = "alphabetic";
+			c.addChild(n);
+		}
+		c.tic0 = tic0;
+		c.x = xLoc;
+		c.y = yLoc;
+		c.xLoc = xLoc;
+		c.scaleFactor = 0;
+		c.incr = incr;
+		c.precision = precision;
+		c.index = index;
+		c.scaleX = c.scaleY = c.scale = 1;
+		return c;
+	}	
+	
+
+	
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+function getOut() {
+	return;
+	var outtxt = "";
+	var cell = 0;
+	var dir = 0;
+	for (var i = 0; i < chips.length; i++) {
+		if (chips[i].alpha > 0) {
+			dir = (chips[i].rotated ? 1 : 0);
+			cell = chips[i].col + "," + chips[i].row + "," + (chips[i].units-1) + "," + dir;
+			outtxt += ":"+cell;
+		}
+	}
+	if (qn != null) {
+		parent.postMessage(qn+":"+outtxt,'*');
+	}	
+}
+function play_single_sound() {
+		document.getElementById('audiotag1').play();
+}
+
+</script>
+</head>
+<body onload="init();">
+<div>
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
+  	<canvas id="testCanvas" width="700" height="620"></canvas>
+  </div>
+</div>
+
+</div>
+<audio id="audiotag1" src="../audio/boomboom.mp3" preload="auto"></audio>
+</body>
+</html>

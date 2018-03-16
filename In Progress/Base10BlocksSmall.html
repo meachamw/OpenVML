@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Base-10 Blocks Virtual Manipulative</title>
+    <meta name="keywords" content="Virtual Manipulative, Base-10 blocks, base blocks, OER, Open Education Resources, math, math manipulative, problem solving, pattern blocks, algebra">
+	<meta name="description" content="OpenVML - OER Library of Virtual Manipulatives.  Base-10 Blocks for Addition and Subtraction">
+
+	<script src="../lib/easeljs-NEXT.combined.js"></script>
+	<script type="text/javascript" src="../lib/tweenjs-NEXT.combined.js"></script>
+
+<script id="editable">
+
+	/*
+	   Description:  Developed by William Meacham and Frank Marfai in collaboration with Phoenix College and Scottsdale Community College.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+	*/
+
+	var canvas, stage, container;
+	var unGroupContainer, groupContainer;
+	var placeValueC;
+	var curPV = 100;
+	var horizLineC;
+	var placeValueLabelC100,placeValueLabelC10,placeValueLabelC1;
+	var pvShiftC;
+	var savedBounds;
+	var blocks1p = [];
+	var blocks10p = [];
+	var blocks100p = [];
+	var blammos = [];
+	var blocks1pCount = 0;
+	var blocks10pCount = 0;
+	var blocks100pCount = 0;
+	var blocks1n = [];
+	var blocks10n = [];
+	var blocks100n = [];
+	var blocks1nCount = 0;
+	var blocks10nCount = 0;
+	var blocks100nCount = 0;
+	var massMove = [];
+	var downTime;
+	var clickCountPos = 0, clickCountNeg = 0;
+	var update = true;
+	var currentAlpha = 1;
+	var currentRow = 1;
+	var currentPosCol = 505;
+	var currentPosRow = 65;
+	var currentNegCol = 505;
+	var currentNegRow = 235;
+	var currentPosCol10 = 285;
+	var currentPosRow10 = 100;
+	var currentNegCol10 = 285;
+	var currentNegRow10 = 260;
+	var currentPosCol100 = 80;
+	var currentPosRow100 = 100;
+	var currentNegCol100 = 80;
+	var currentNegRow100 = 240;
+	var blammoSS;
+	var blammo;
+	var blammos = [];
+	var questionText = "";
+	var snapToGrid = true;
+	var lastTap = 0;
+	var timeout;
+	var TILE_SIZE = 10;
+	var RADIUS = TILE_SIZE/2;
+	var selectCountp1 = 0,
+	    selectCountp10 = 0,
+		selectCountp100 = 0;
+	var selectCountn1 = 0,
+	    selectCountn10 = 0,
+		selectCountn100 = 0;
+	var pVShow, vertShow, horShow;
+	var activeCount = 0,activeCount1 = 0,activeCount10 = 0, activeCount100 = 0;
+	var updateInProgress = false;
+	
+	// Variables needed for select box functionality
+	var	selection = new createjs.Shape(),
+		g = selection.graphics.setStrokeStyle(1).beginStroke("#000").beginFill("rgba(0,0,0,0.05)"),
+		sd = g.setStrokeDash([10,5], 0).command,
+		r = g.drawRect(0,0,100,100).command,
+		moveListener;
+
+	
+	function init() {
+		qn = getParameterByName("qn");
+		initValue = getParameterByName("inVal");
+		if (initValue != null && initValue != "") {
+//			console.log(initValue);
+			inRods = initValue.split(':');
+		}
+		var qt = getParameterByName("qt");
+		if (qt != null && qt != "") {
+			questionText = qt;
+		}
+		// create stage and point it to the canvas:
+		canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage(canvas);
+		resize();
+		// enable touch interactions if supported on the current device:
+		createjs.Touch.enable(stage);
+
+		// enabled mouse over / out events
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
+
+	    container = new createjs.Container();
+		stage.addChild(container);
+		blammoSS = new createjs.SpriteSheet({
+			framerate: 36,
+			"images": ["../images/b.png"],
+			"frames": {width:66.66666, height:66.66666},
+			"animations": {
+				"blammo":{ 
+					frames:[0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+					next: false
+				}
+			}
+		});
+		blammo = new createjs.Sprite(blammoSS,"blammo");
+		blammo.x = 200;
+		blammo.regX = 33;
+		blammo.y = 200;
+		blammo.regY = 33;
+		createStage();
+
+
+		createjs.Ticker.setFPS(20);
+		createjs.Ticker.addEventListener("tick", tick);
+	}
+	function resize() {
+			var canvas = document.querySelector('canvas');
+			var ctx = canvas.getContext('2d');
+
+		// Our canvas must cover full height of screen
+		// regardless of the resolution
+		console.log("resizing");
+		var height = window.innerHeight*.95;
+		
+		// So we need to calculate the proper scaled width
+		// that should work well with every resolution
+		var ratio = canvas.width/canvas.height;
+		var width = height * ratio;
+		
+		canvas.style.width = width+'px';
+		canvas.style.height = height+'px';
+	}
+	function stop() {
+		createjs.Ticker.removeEventListener("tick", tick);
+	}
+	function createStage() {
+		var resetImage = new Image();
+		var trashCanImage = new Image();
+		resetImage.src = "../images/resetButton.png";
+		resetImage.onload = handleResetButtonLoad;
+		trashCanImage.src = "../images/bombSmall.png";
+		trashCanImage.onload=handleTrashCanLoad;
+		var unGroupImage = new Image();
+		unGroupImage.src = "../images/UnGroupSmall.png";
+		unGroupImage.onload = handleUnGroupButtonLoad;
+		var GroupImage = new Image();
+		GroupImage.src = "../images/GroupSmall.png";
+		GroupImage.onload = handleGroupButtonLoad;
+		
+		var graphics = new createjs.Graphics();
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").drawRect(5, 5, 640, 470);		// Border
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").drawRect(10, 375, 630, 95);   // Tray
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").beginFill("#FFFFFF").drawRect(10, 10, 630, 360);   // Grid
+ //       graphics.alpha=0.25;
+/*		graphics.setStrokeStyle(.75).beginStroke("#D3D3D3");
+        for (var i = 0; i < 37; i++)
+        	graphics.mt(10,10+i*TILE_SIZE).lt(580,10+i*TILE_SIZE);
+        for (var i = 0; i < 57; i++)
+        	graphics.mt(20+i*TILE_SIZE,10).lt(20+i*TILE_SIZE,370);
+*/
+		var shape = new createjs.Shape(graphics);
+        container.addChild(shape);
+		stage.addChild(drawUnit1(500,400,"#00CCFF",1));
+		stage.addChild(drawUnit1(500,420,"#FFCCFF",-1));
+		stage.addChild(drawUnit10(460,420,"#0077FF",10,0));
+		stage.addChild(drawUnit10(480,420,"#FFAAAA",-10,0));
+		stage.addChild(drawUnit100(310,420,"#0033FF",100));
+		stage.addChild(drawUnit100(400,420,"#FF0000",-100));
+
+//		stage.addChild(drawUnit10(250,400,"#0077FF",10,90));
+//		stage.addChild(drawUnit10(250,420,"#FF8888",-10,90));
+		pVShow = createRadioButtonSelect(500,390,showPlaceValue,"Hide PV",false);
+		horShow = createRadioButtonSelect(500,415,showHorGrid,"Hide Hor Lines",false);
+		vertShow = createRadioButtonSelect(500,440,showVerGrid,"Hide Ver Lines",false);
+		stage.addChild(pVShow,horShow,vertShow);
+		
+		container.on("mousedown", dragStart);
+		container.on("pressup", dragEnd);
+
+
+		stage.addChild(placeValue());
+		stage.addChild(horizLine());
+		stage.addChild(placeValueLabels100());
+		stage.addChild(placeValueLabels10());
+		stage.addChild(placeValueLabels1());
+		placeValueLabelC100.visible = true;
+		placeValueLabelC10.visible = false;
+		placeValueLabelC1.visible = false;
+		
+		stage.addChild(pvShiftButtons());
+		update = true;
+	}
+
+	function placeValue() {
+		placeValueC = new createjs.Container();
+		placeValueC.x = 15;
+		placeValueC.y = 15;
+		var bg = new createjs.Shape();
+		bg.graphics.setStrokeStyle(2).beginStroke("#000000").drawRect(0, 0, 255,350);   // 100's
+		bg.graphics.drawRect(255, 0, 215,350);   // 10's
+		bg.graphics.drawRect(470, 0, 150,350);   // 1's
+		placeValueC.addChild(bg);
+		return placeValueC;
+	}
+	
+	function horizLine() {
+		horizLineC = new createjs.Container();
+		horizLineC.x = 15;
+		horizLineC.y = 180;
+		var bg = new createjs.Shape();
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000").mt(0,0).lt(620,0);
+		horizLineC.addChild(bg);
+		return horizLineC;
+	}
+	
+	function placeValueLabels100() {
+		placeValueLabelC100 = new createjs.Container();
+		placeValueLabelC100.x = 15;
+		placeValueLabelC100.y = 20;
+		var hundredsPlace = createText(100,15,"100's");
+		var tensPlace = createText(340,15,"10's");
+		var onesPlace = createText(540,15,"1's");
+		placeValueLabelC100.addChild(hundredsPlace,tensPlace,onesPlace);
+		return placeValueLabelC100;	
+	}		
+	function placeValueLabels10() {
+		placeValueLabelC10 = new createjs.Container();
+		placeValueLabelC10.x = 15;
+		placeValueLabelC10.y = 20;
+		var hundredsPlace = createText(100,15,"10's");
+		var tensPlace = createText(340,15,"1's");
+		var onesPlace = createText(540,15,".1's");
+		placeValueLabelC10.addChild(hundredsPlace,tensPlace,onesPlace);
+		return placeValueLabelC10;	
+	}		
+	function placeValueLabels1() {
+		placeValueLabelC1 = new createjs.Container();
+		placeValueLabelC1.x = 15;
+		placeValueLabelC1.y = 20;
+		var hundredsPlace = createText(100,15,"1's");
+		var tensPlace = createText(340,15,".1's");
+		var onesPlace = createText(540,15,".01's");
+		placeValueLabelC1.addChild(hundredsPlace,tensPlace,onesPlace);
+		return placeValueLabelC1;	
+	}		
+	function pvShiftButtons() {
+		pvShiftC = new createjs.Container();
+		pvShiftC.x = 0;
+		pvShiftC.y = 10;
+		pvShiftC.addChild(createShiftB(30,25,shiftPVLeft,0));
+		pvShiftC.addChild(createShiftB(620,25,shiftPVRight,180));
+		return pvShiftC;
+	}		
+	
+	function shiftPVRight() {
+		if (curPV == 100) {
+			curPV = 10;
+			placeValueLabelC100.visible = false;
+			placeValueLabelC10.visible = true;
+			placeValueLabelC1.visible = false;
+		} else if (curPV == 10) {
+			curPV = 1;
+			placeValueLabelC100.visible = false;
+			placeValueLabelC10.visible = false;
+			placeValueLabelC1.visible = true;
+		}	
+		update = true;
+	}
+	
+	function shiftPVLeft() {
+		if (curPV == 10) {
+			curPV = 100;
+			placeValueLabelC100.visible = true;
+			placeValueLabelC10.visible = false;
+			placeValueLabelC1.visible = false;
+		} else if (curPV == 1) {
+			curPV = 10;
+			placeValueLabelC100.visible = false;
+			placeValueLabelC10.visible = true;
+			placeValueLabelC1.visible = false;
+		}
+		update = true;	
+	}
+	
+	function dragStart(event) {
+		selectCountp1 = selectCountp10 = selectCountp100 = 0;
+		selectCountn1 = selectCountn10 = selectCountn100 = 0;
+		clearSelects(blocks1p);
+		clearSelects(blocks10p);
+		clearSelects(blocks100p);
+		clearSelects(blocks1n);
+		clearSelects(blocks10n);
+		clearSelects(blocks100n);
+//			console.log(selectCount1 + ":" + selectCount10 + ":" + selectCount100);
+		container.addChild(selection).set({x:event.stageX, y:event.stageY});
+		r.w = 0; r.h = 0;
+		moveListener = container.on("pressmove", drag);
+		update = true;
+	};
+
+	function drag(event) {
+		r.w = event.stageX - selection.x;
+		r.h = event.stageY - selection.y; 
+		update = true;
+	}
+
+	function dragEnd(event) {
+//			console.log(r.w + ":" + r.h + ":" + selection.x + ":" + selection.y);
+		container.off("pressmove", moveListener);
+		setSelects(blocks1p,5,5,1);
+		setSelects(blocks10p,5,50,10);
+		setSelects(blocks100p,50,50,100);
+		setSelects(blocks1n,5,5,-1);
+		setSelects(blocks10n,5,50,-10);
+		setSelects(blocks100n,50,50,-100);
+		container.removeChild(selection);
+		updateGroupUnGroup();
+	}
+
+	function setSelects(blocks,width,height,sC) {
+		var x1 = selection.x, 
+		    y1 = selection.y,
+			x2 = selection.x + r.w,
+			y2 = selection.y + r.h;
+		if (r.w < 0) {
+			x1 = selection.x + r.w;
+			x2 = selection.x;
+		}
+		if (r.h < 0) {
+			y1 = selection.y + r.h;
+			y2 = selection.y;
+		}
+		for (var i = 0; i < blocks.length; i++) {
+			if (blocks[i].x > x1 + width && blocks[i].y > y1 + height &&
+				blocks[i].x < x2 - width && blocks[i].y < y2 - height) {
+					blocks[i].alpha = .5;
+					switch (sC) {
+						case 1 : selectCountp1++; break;
+						case 10 : selectCountp10++; break;
+						case 100 : selectCountp100++; break;
+						case -1 : selectCountn1++; break;
+						case -10 : selectCountn10++; break;
+						case -100 : selectCountn100++; break;
+					}
+				}
+		}
+		update = true;
+		updateGroupUnGroup();
+	}	
+	function clearSelects(blocks) {
+		for (var i = 0; i < blocks.length; i++) 
+			blocks[i].alpha = 1;
+	}
+	
+	function updateGroupUnGroup() {
+		unGroupContainer.visible = false;
+		groupContainer.visible = false;
+		if (selectCountp10 + selectCountn10 + selectCountp100 + selectCountn100 == 1 && 
+		    selectCountp1 == 0 && selectCountn1 == 0) {
+			unGroupContainer.visible = true;
+		} 
+		if (selectCountp100 + selectCountp10 + selectCountp1 +
+            selectCountn100 + selectCountn10 + selectCountn1 == 10) {
+			if (selectCountp1 == 10 || selectCountp10 == 10 || selectCountn1 == 10 || selectCountn10 == 10) {
+				groupContainer.visible = true;
+			}
+		}
+	}
+
+	function createText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+	function createTitleText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "bold 20px Arial", "BLUE");
+		hsText.shadow = 20;
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+	
+	function createRadioText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+	
+	function createRadioButtonSelect(xloc,yloc, callFunction, text, selected) {
+		var rC = new createjs.Container();
+		rC.x = xloc+15;
+		rC.y = yloc;
+		rC.selected = selected;
+		rC.addChild(createRadioText(35,5,text));
+		var hs = new createjs.Shape();
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(5, 5, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.x = 15;
+		hs.y = 5;
+		rC.addChild(hs);
+		rC.hs = hs;
+		if (selected) 
+			hs.alpha = 1;
+		else
+			hs.alpha = .2;
+		hs.on("rollover", function (evt) {
+			if (!rC.selected)
+				hs.alpha = .6;
+			update = true;   
+		});
+		hs.on("rollout", function (evt) {
+			if (!rC.selected)
+				hs.alpha = .2;
+			update = true;
+		});
+		hs.on("click", function (evt) {
+			if (rC.selected == true) {
+				hs.alpha = .2;
+				rC.selected = false;
+			} else {
+				rC.selected = true;
+				hs.alpha = 1;
+			}
+			callFunction(rC.selected);
+		});		
+		return rC;
+	}
+	function createShiftB(xloc,yloc, callFunction,rotation) {
+		var rC = new createjs.Container();
+		rC.x = xloc;
+		rC.y = yloc;
+		rC.rotation = rotation;
+		var hs = new createjs.Shape();
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.mt(0,10).lt(10,0).lt(10,20).lt(0,10).endFill();	
+		hs.regX = 5;
+		hs.regY = 10;
+		rC.addChild(hs);
+		hs.alpha = .2;
+		hs.on("rollover", function (evt) {
+			hs.alpha = .6;
+			update = true;   
+		});
+		hs.on("rollout", function (evt) {
+			hs.alpha = .2;
+			update = true;
+		});
+		hs.on("mousedown",function(evt) {
+			hs.alpha = 1;
+		});
+		hs.on("mouseup",function(evt) {
+			hs.alpha = .6;
+		});
+		hs.on("click", function (evt) {
+			callFunction();
+		});		
+		return rC;
+	}
+
+	
+	function drawUnit1(xloc,yloc,color,val) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000");
+		bg.graphics.beginFill(color).dr(0,0,TILE_SIZE,TILE_SIZE).endFill();
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = RADIUS;
+		c.regY = RADIUS; 
+		c.onTheMove = false;
+		c.greenMile = false;
+		c.color = color;
+
+		c.cursor = "move";
+		c.cache(0,0,TILE_SIZE,TILE_SIZE);
+		c.on("mousedown", function (evt) {
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+			update = true;
+		});
+
+		c.on("click", function (evt) {
+			var now = new Date().getTime();
+			var timesince = now - downTime;
+			if (timesince > 400) {
+				console.log("to slow for click");
+				downTime = now;
+				return;
+			}
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			if (c.val == 1)
+				clickCountPos++;
+			else
+				clickCountNeg++;
+			if (c.y > 10 && c.y < 380) {
+				if (c.alpha == .5) {
+					c.val == 1 ? selectCountp1-- : selectCountn1--;
+					c.alpha = 1;
+				} else {
+					c.val == 1 ? selectCountp1++ : selectCountn1++;
+					c.alpha = .5;
+				}
+			} else if (c.y > 380) {
+				var newY,newX;
+				if (c.val == 1) {
+					if (clickCountPos % 5 == 0) {  // Time to try to wrap around
+						if (currentPosCol + 20 > 610)
+							return;
+					
+					} else {  // Time to move down
+						if (currentPosRow + 20 > 320)
+							return;
+					}
+					c.row = currentPosRow;
+					c.col = currentPosCol;
+				    newX = currentPosCol;
+					newY = currentPosRow;
+					if (clickCountPos % 5 == 0) {
+						currentPosRow -= 80;
+						currentPosCol += 20;
+						}
+					else	
+						currentPosRow += 20;
+				} else {
+					if (clickCountNeg % 5 == 0) {  // Time to try to wrap around
+						if (currentNegCol + 20 > 610)
+							return;
+					
+					} else {  // Time to move down
+						if (currentNegRow + 20 > 320)
+							return;
+					}
+					c.row = currentNegRow;
+					c.col = currentNegCol;
+				    newX = currentNegCol;
+					newY = currentNegRow;
+					if (clickCountNeg % 5 == 0) {
+						currentNegRow -= 80;
+						currentNegCol += 20;
+						}
+					else	
+						currentNegRow += 20;
+				}
+				activeCount1++;
+				c.onTheMove = true;
+				createjs.Tween.get(c, {loop: false}, null, false) // get a new tween targeting circle
+				.to({x: newX, y: newY,alpha:currentAlpha}, 1000, createjs.Ease.get(1)) // tween x/y/alpha properties over 1s (1000ms) with ease out
+				.call(handleTween1Complete);
+				c.index = 1;
+				if (val == 1) {
+					blocks1pCount++;
+					console.log("Adding 1 p block" + blocks1pCount);
+					blocks1p.push(c);
+				} else {
+					blocks1nCount++;
+					blocks1n.push(c);
+				}
+				stage.addChild(drawUnit1(xloc,yloc,color,val));
+//				kill(blocks1p,blocks1pCount,blocks1n,blocks1nCount);
+			}  
+			update = true;
+			updateGroupUnGroup();
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2)
+				return;
+			if (c.val == 1)
+				clickCountPos = 1;
+			else
+				clickCountNeg = 1;
+			if (c.x < 10 || c.x  > 630 || c.y < 10 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					activeCount1++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+					.call(handleTween1Complete);
+				}
+			} else {
+				if (snapToGrid) {
+					c.x = Math.round((c.x-5)/TILE_SIZE)*TILE_SIZE+5;
+					c.y = Math.round((c.y-5)/TILE_SIZE)*TILE_SIZE+5;
+				}
+				console.log(c.x + "," + c.y)
+				if (c.val == 1) {
+					currentPosRow = c.y + 20;
+					currentPosCol = c.x;
+				} else {
+					currentNegRow = c.y + 20;
+					currentNegCol = c.x;
+				}				
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					if (val == 1) {
+						blocks1pCount++;
+						blocks1p.push(c);
+					} else {
+						blocks1nCount++;
+						blocks1n.push(c);
+					}
+					stage.addChild(drawUnit1(xloc,yloc,color,val));
+				}
+				kill(blocks1p,blocks1pCount,blocks1n,blocks1nCount);
+			}
+			update = true;
+			getOut();
+
+		});
+		
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+			update = true;
+		});
+
+		return c;
+	}
+
+	function startMassMovement(evt) {
+		massMove = [];
+		for (var i = 0; i < blocks1p.length; i++) {
+			if (blocks1p[i].alpha == .5) {
+				blocks1p[i].offset = {x: blocks1p[i].x - evt.stageX, y: blocks1p[i].y - evt.stageY};
+				massMove.push(blocks1p[i]);
+			}
+		}
+		for (var i = 0; i < blocks1n.length; i++) {
+			if (blocks1n[i].alpha == .5) {
+				blocks1n[i].offset = {x: blocks1n[i].x - evt.stageX, y: blocks1n[i].y - evt.stageY};
+				massMove.push(blocks1n[i]);
+			}
+		}
+		for (var i = 0; i < blocks10p.length; i++) {
+			if (blocks10p[i].alpha == .5) {
+				blocks10p[i].offset = {x: blocks10p[i].x - evt.stageX, y: blocks10p[i].y - evt.stageY};
+				massMove.push(blocks10p[i]);
+			}
+		}
+		for (var i = 0; i < blocks10n.length; i++) {
+			if (blocks10n[i].alpha == .5) {
+				blocks10n[i].offset = {x: blocks10n[i].x - evt.stageX, y: blocks10n[i].y - evt.stageY};
+				massMove.push(blocks10n[i]);
+			}
+		}
+		for (var i = 0; i < blocks100p.length; i++) {
+			if (blocks100p[i].alpha == .5) {
+				blocks100p[i].offset = {x: blocks100p[i].x - evt.stageX, y: blocks100p[i].y - evt.stageY};
+				massMove.push(blocks100p[i]);
+			}
+		}
+		for (var i = 0; i < blocks100n.length; i++) {
+			if (blocks100n[i].alpha == .5) {
+				blocks100n[i].offset = {x: blocks100n[i].x - evt.stageX, y: blocks100n[i].y - evt.stageY};
+				massMove.push(blocks100n[i]);
+			}
+		}
+	}
+				
+	function updateMassMovement(evt) {
+		for (var i = 0; i < massMove.length; i++) {
+			massMove[i].x = evt.stageX + massMove[i].offset.x;
+			massMove[i].y = evt.stageY + massMove[i].offset.y;
+		}
+		update = true;
+	}
+	
+	function drawUnit10(xloc,yloc,color,val, rotation) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(.5).beginStroke("#000000");
+		for (var i = 0; i < 10; i++) {
+			bg.graphics.beginFill(color).dr(0,i*TILE_SIZE,TILE_SIZE,TILE_SIZE);
+		}
+		bg.graphics.endFill();
+		bg.graphics.setStrokeStyle(3).dr(0,0,TILE_SIZE,TILE_SIZE*10);
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = RADIUS;
+		c.regY = 50; 
+		c.onTheMove = false;
+		c.greenMile = false;
+		c.rotation = rotation;
+		c.color = color;
+
+		c.cursor = "move";
+		c.scaleX = c.scaleY = c.scale = .8;
+		c.cache(0,0,TILE_SIZE,TILE_SIZE*10);
+
+		c.on("mousedown", function (evt) {
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+			update = true;
+		});
+		
+		c.on("click", function (evt) {
+			var currentTime = new Date().getTime();
+			var tapLength = currentTime - lastTap;
+			lastTap = currentTime;
+			var clickLength = new Date().getTime() - downTime;
+			clearTimeout(timeout);
+			if (clickLength > 300)  
+				return;  // To slow for click
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			// Not on the stage.  Move it to the state.  No double click happening here
+			if (c.y > 380) {    
+				var newY,newX;
+				if (c.val == 10) {
+					if (currentPosCol10 + 20 > 640) 
+						return;
+					c.row = currentPosRow10;
+					c.col = currentPosCol10;
+					newX = currentPosCol10;
+					newY = currentPosRow10;
+					currentPosCol10 += 20;
+				} else {
+					if (currentNegCol10 + 20 > 640)
+						return;
+					c.row = currentNegRow10;
+					c.col = currentNegCol10;
+					newX = currentNegCol10;
+					newY = currentNegRow10;
+					currentNegCol10 += 20;
+				}
+				c.scaleX = c.scaleY = c.scale = 1;
+				activeCount10++;
+				c.onTheMove = true;
+				createjs.Tween.get(c, {loop: false}, null, false) 
+				.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) 
+				.call(handleTween10Complete);
+				c.index = 1;
+				if (val == 10) {
+					blocks10pCount++;
+					blocks10p.push(c);
+				} else {
+					blocks10nCount++;
+					blocks10n.push(c);
+				}
+				stage.addChild(drawUnit10(xloc,yloc,color,val,rotation));
+//				kill(blocks10p,blocks10pCount,blocks10n,blocks10nCount);
+		
+				return;
+			} else {  // Is on the stage.  
+				if (c.alpha == .5) {
+					c.val == 10 ? selectCountp10-- : selectCountn10--;
+					c.alpha = 1;
+				} else {
+					c.val == 10 ? selectCountp10++ : selectCountn10++;
+					c.alpha = .5;
+				}
+			}
+			update = true;
+			updateGroupUnGroup();
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2)
+				return;
+			
+			if (c.x < 10 || c.x  > 620 || c.y < 70 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					activeCount10++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+					.call(handleTween10Complete);
+				}
+			} else {
+				c.scaleX = c.scaleY = c.scale = 1;
+				if (snapToGrid) {
+					c.x = Math.round((c.x-5)/TILE_SIZE)*TILE_SIZE + 5;
+					c.y = Math.round((c.y-50)/TILE_SIZE)*TILE_SIZE+50;
+				}
+				if (c.val == 10) {
+					currentPosRow10 = c.y;
+					currentPosCol10 = c.x + 20;
+				} else {
+					currentNegRow10 = c.y;
+					currentNegCol10 = c.x + 20;
+				}				
+				c.scaleX = c.scaleY = c.scale = 1;
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					if (val == 10) {
+						blocks10pCount++;
+						blocks10p.push(c);
+					} else {
+						blocks10nCount++;
+						blocks10n.push(c);
+					}
+					stage.addChild(drawUnit10(xloc,yloc,color,val,rotation));
+				}
+			kill(blocks10p,blocks10pCount,blocks10n,blocks10nCount);
+			}
+			update = true;
+			getOut();
+		});
+		
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+			update = true;
+		});
+
+		return c;
+	}
+	function drawUnit100(xloc,yloc,color,val) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(.5).beginStroke("#000000");
+		for (var i = 0; i < 10; i++) {
+		  for (var j = 0; j < 10; j++) 
+			bg.graphics.beginFill(color).dr(j*TILE_SIZE,i*TILE_SIZE,TILE_SIZE,TILE_SIZE);
+		}
+		bg.graphics.endFill();
+		bg.graphics.setStrokeStyle(3).dr(0,0,TILE_SIZE*10,TILE_SIZE*10);
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = 50;
+		c.regY = 50; 
+		c.onTheMove = false;
+		c.greenMile = false;
+
+		c.cursor = "move";
+		c.scaleX = c.scaleY = c.scale = .8;
+		c.cache(0,0,TILE_SIZE*10,TILE_SIZE*10);
+
+		c.on("mousedown", function (evt) {
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+			update = true;
+		});
+
+		c.on("click", function (evt) {
+			var currentTime = new Date().getTime();
+			var tapLength = currentTime - lastTap;
+			lastTap = currentTime;
+			var clickLength = new Date().getTime() - downTime;
+			clearTimeout(timeout);
+			if (clickLength > 300)  
+				return;  // To slow for click
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			// Not on the stage.  Move it to the state.  No double click happening here
+			if (c.y > 380) {   
+				var newY,newX;
+				if (c.val == 100) {
+					if (currentPosCol100 + 30 > 580)
+						return;
+					c.row = currentPosRow100;
+					c.col = currentPosCol100;
+					newX = currentPosCol100;
+					newY = currentPosRow100;
+					currentPosCol100 += 30;
+					currentPosRow100 += 20;
+				} else {
+					if (currentNegCol100 + 30 > 580)
+						return;
+					c.row = currentNegRow100;
+					c.col = currentNegCol100;
+					newX = currentNegCol100;
+					newY = currentNegRow100;
+					currentNegCol100 += 30;
+					currentNegRow100 = currentNegRow100 < 300 ? currentNegRow100 + 20 : currentNegRow100 - 60;
+				}
+				activeCount100++;
+				c.onTheMove = true;
+				createjs.Tween.get(c, {loop: false}, null, false) 
+				.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) 
+				.call(handleTween100Complete);
+				c.index = 1;
+				if (val == 100) {
+					blocks100pCount++;
+					blocks100p.push(c);
+				} else {
+					blocks100nCount++;
+					blocks100n.push(c);
+				}
+				stage.addChild(drawUnit100(xloc,yloc,color,val));
+//				kill(blocks100p,blocks100pCount,blocks100n,blocks100nCount);
+				return;
+			} else {  // Is on the stage.  
+				if (c.alpha == .5) {
+					c.val == 100 ? selectCountp100-- : selectCountn100--;
+					c.alpha = 1;
+				} else {
+					c.val == 100 ? selectCountp100++ : selectCountn100++;
+					c.alpha = .5;
+				}
+			}
+			update = true;
+			updateGroupUnGroup();
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2)
+				return;
+			
+			if (c.x < 70 || c.x  > 580 || c.y < 70 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					activeCount100++;
+					c.onTheMove = true;
+					c.scaleX = c.scaleY = c.scale = .8;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+					.call(handleTween100Complete);
+				}
+			} else {
+				c.scaleX = c.scaleY = c.scale = 1;
+				if (snapToGrid) {
+					c.x = Math.round((c.x-50)/TILE_SIZE)*TILE_SIZE+50;
+					c.y = Math.round((c.y-50)/TILE_SIZE)*TILE_SIZE+50;
+				}
+				if (c.val == 100) {
+					currentPosRow100 = c.y + 20;
+					currentPosCol100 = c.x + 30;
+				} else {
+					currentNegRow100 = c.y + 20;
+					currentNegCol100 = c.x + 30;
+				}				
+				c.scaleX = c.scaleY = c.scale = 1;
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					if (val == 100) {
+						blocks100pCount++;
+						blocks100p.push(c);
+					} else {
+						blocks100nCount++;
+						blocks100n.push(c);
+					}
+					stage.addChild(drawUnit100(xloc,yloc,color,val));
+				}
+			kill(blocks100p,blocks100pCount,blocks100n,blocks100nCount);
+			}
+			update = true;
+			getOut();
+
+		});
+
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+			update = true;
+		});
+		return c;
+	}	
+	function unGroup() {
+		for (var i = 0; i < blocks10p.length; i++) {
+			if (blocks10p[i].alpha == .5) {
+				unGroup10(blocks10p[i]);
+				blocks10p.splice(i,1);
+				selectCountp10--;
+				updateGroupUnGroup();
+				return;
+			}
+		}
+		for (var i = 0; i < blocks10n.length; i++) {
+			if (blocks10n[i].alpha == .5) {
+				unGroup10(blocks10n[i]);
+				blocks10n.splice(i,1);
+				selectCountn10--;
+				updateGroupUnGroup();
+				return;
+			}
+		}
+		for (var i = 0; i < blocks100p.length; i++) {
+			if (blocks100p[i].alpha == .5) {
+				unGroup100(blocks100p[i]);
+				blocks100p.splice(i,1);
+				selectCountp100--;
+				updateGroupUnGroup();
+				return;
+			}
+		}
+		for (var i = 0; i < blocks100n.length; i++) {
+			if (blocks100n[i].alpha == .5) {
+				unGroup100(blocks100n[i]);
+				blocks100n.splice(i,1);
+				selectCountn100--;
+				updateGroupUnGroup();
+				return;
+			}
+		}
+	}
+			
+			
+	function unGroup10(c) {
+		var color = "#00CCFF";
+		if (c.val == -10)
+			color = "#FFCCFF";
+		var yPoint = c.y - 45;
+		var xPoint = c.x;
+		updateInProgress = true;
+		for (var i = 0; i < 10; i++) {
+			var newUnit1 = drawUnit1(c.x,yPoint,color,c.val/10);
+			createjs.Tween.get(newUnit1, {loop: false}, null, false) 
+				.to({x: xPoint, y: yPoint}, 500)
+			newUnit1.alpha = 1;
+			newUnit1.index = 1;
+			if (c.val == 10) {
+				blocks1pCount++;
+				blocks1p.push(newUnit1);
+			} else {
+				blocks1nCount++;
+				blocks1n.push(newUnit1);
+			}
+			yPoint += TILE_SIZE;
+			xPoint = i % 2 == 0 ? c.x + 20 : c.x;
+			stage.addChild(newUnit1);
+		}
+		if (c.val == 10)
+			blocks10pCount--;
+		else
+			blocks10nCount--;
+		stage.removeChild(c);
+		update = true;
+		setTimeout(function() {
+			updateInProgress = false;
+		},1000);
+		
+	}
+	function unGroup100(c) {
+		var color = "#0033FF";
+		if (c.val == -100)
+			color = "#FFAAAA";
+		var yPoint = c.y;
+		var xPoint = c.x - 45;
+		updateInProgress = true;
+		for (var i = 0; i < 10; i++) {
+			var newUnit10 = drawUnit10(xPoint,yPoint,color,c.val/10);
+			newUnit10.scaleX = newUnit10.scaleY = newUnit10.scale = 1;
+			createjs.Tween.get(newUnit10, {loop: false}, null, false) 
+				.to({x: xPoint + i*5, y: yPoint}, 500)
+			newUnit10.alpha = 1;
+			newUnit10.index = 1;
+			if (c.val == 100) {
+				blocks10pCount++;
+				blocks10p.push(newUnit10);
+			} else {
+				blocks10nCount++;
+				blocks10n.push(newUnit10);
+			}
+			xPoint += TILE_SIZE+5;
+			stage.addChild(newUnit10);
+		}
+		if (c.val == 100)
+			blocks100pCount--;
+		else
+			blocks100nCount--;
+		stage.removeChild(c);			
+		update = true;
+		setTimeout(function() {
+			updateInProgress = false;
+		},1000);
+	}
+	
+	function group1(blocks) {
+		var minX = 1000,
+			minY = 1000;
+	    groupB =  [];
+		for (var i = 0; i < blocks.length; i++) {
+			if (blocks[i].alpha == .5) {
+				if (blocks[i].x < minX)
+					minX = blocks[i].x;
+				if (blocks[i].y < minY)
+					minY = blocks[i].y;
+				groupB.push(blocks[i]);
+			}
+		}
+		updateInProgress = true;
+		for (var i = 0; i < groupB.length; i++) {
+			createjs.Tween.get(groupB[i], {loop: false}, null, false) 
+			.to({x: minX, y: minY}, 1000, createjs.Ease.get(1));
+			minY+= TILE_SIZE;
+//			groupB[i].alpha = 1;
+		}
+		console.log("Creating a group 10");
+		setTimeout(function() {
+			var color = "#0077FF";
+			if (blocks[0].val == -1)
+				color = "#FFAAAA";
+			console.log("Timeout over");
+			var newUnit10 = drawUnit10(minX,minY-55,color,blocks[0].val*10);
+			newUnit10.scaleX = newUnit10.scaleY = newUnit10.scale = 1;
+			newUnit10.alpha = 0;
+			newUnit10.index = 1;
+			activeCount10++;
+			createjs.Tween.get(newUnit10, {loop: false}, null, false) 
+				.to({alpha: 1}, 1000, createjs.Ease.get(1))
+				.call(handleTween10Complete);
+			if (newUnit10.val == 10) {
+				blocks10pCount++;
+				blocks10p.push(newUnit10);
+			} else {
+				blocks10nCount++;
+				blocks10n.push(newUnit10);
+			}
+			stage.addChild(newUnit10);
+			for (i = 0; i < blocks.length;) {
+				if (blocks[i].alpha == .5) {
+					var deadBlock = blocks[i];
+					deadBlock.val == 1 ? blocks1pCount-- : blocks1nCount--;
+					blocks.splice(i,1);
+					stage.removeChild(deadBlock);
+					
+				} else
+					i++;
+			}
+			update = true;
+			updateInProgress = false;
+		},1000);
+	}
+	
+	function group10(blocks) {
+		var minX = 1000,
+			minY = 1000;
+	    groupB =  [];
+		for (var i = 0; i < blocks.length; i++) {
+			if (blocks[i].alpha == .5) {
+				if (blocks[i].x < minX)
+					minX = blocks[i].x;
+				if (blocks[i].y < minY)
+					minY = blocks[i].y;
+				groupB.push(blocks[i]);
+			}
+		}
+		for (var i = 0; i < groupB.length; i++) {
+			createjs.Tween.get(groupB[i], {loop: false}, null, false) 
+			.to({x: minX, y: minY}, 1000, createjs.Ease.get(1));
+			minX += TILE_SIZE;
+//			groupB[i].alpha = 1;
+		}
+		updateInProgress = true;
+		console.log("Creating a group 100");
+		setTimeout(function() {
+			var color = "#0033FF";
+			if (blocks[0].val == -10)
+				color = "#FF0000";
+			console.log("Timeout over");
+			var newUnit100 = drawUnit100(minX-55,minY,color,blocks[0].val*10);
+			newUnit100.scaleX = newUnit100.scaleY = newUnit100.scale = 1;
+			newUnit100.alpha = .4;
+			newUnit100.index = 1;
+			activeCount100++;
+			createjs.Tween.get(newUnit100, {loop: false}, null, false) 
+				.to({alpha: 1}, 1000, createjs.Ease.get(1))
+				.call(handleTween100Complete);
+			if (newUnit100.val == 100) {
+				blocks100pCount++;
+				blocks100p.push(newUnit100);
+			} else {
+				blocks100nCount++;
+				blocks100n.push(newUnit100);
+			}
+			stage.addChild(newUnit100);
+			for (i = 0; i < blocks.length;) {
+				if (blocks[i].alpha == .5) {
+					var deadBlock = blocks[i];
+					deadBlock.val == 10 ? blocks10pCount-- : blocks10nCount--;
+					blocks.splice(i,1);
+					stage.removeChild(deadBlock);
+					
+				} else
+					i++;
+			}
+			updateInProgress = false;
+		},1100);
+	}
+
+	
+	function kill(pblocks,pcount,nblocks,ncount) {
+		updateInProgress = false;
+		for (var i = 0; i < pcount; i++) {
+//			console.log("P: " + pblocks[i].x + ":" + pblocks[i].y + ":" + pblocks[i].onTheMove);
+			if (!pblocks[i].onTheMove) {
+				for (var j = 0; j < ncount; j++) {
+//					console.log("N: " + nblocks[j].x + ":" + nblocks[j].y + ":" + nblocks[j].onTheMove);
+					if (!nblocks[j].onTheMove) {
+						if (Math.abs(pblocks[i].x - nblocks[j].x) < 10 &&
+							Math.abs(pblocks[i].y - nblocks[j].y) < 10) {
+							pblocks[i].greenMile = true;
+							nblocks[j].greenMile = true;
+							updateInProgress = true;
+						}
+					}
+				}
+			}
+		}
+		blowEmUp(2);
+	}	
+	
+	function blowEmUp(event) {
+		if (updateInProgress) {
+			blowEmUpBig(event,blocks1p,0);
+			blowEmUpBig(event,blocks1n,0);
+			blowEmUpBig(event,blocks10p,0);
+			blowEmUpBig(event,blocks10n,0);
+			blowEmUpBig(event,blocks100p,0);
+			blowEmUpBig(event,blocks100n,1);
+			setTimeout(clearBlammos, 3500);
+		}
+	}
+	function blowEmUpBig(event,blocks,state) {
+		console.log(blocks.length);
+		for (var i = 0; i < blocks.length;) {
+			if ((event == 1 && blocks[i].alpha == .5) ||
+			    (event == 2 && blocks[i].greenMile)) {
+				var blammoClone = blammo.clone();
+				blammoClone.x = blocks[i].x;
+				blammoClone.y = blocks[i].y;
+				stage.addChild(blammoClone);
+				blammos.push(blammoClone);
+				var deadChip = blocks[i];
+				switch (blocks[i].val) {
+					case 1 : blocks1pCount--; break;
+					case 10 : blocks10pCount--; break;
+					case 100 : blocks100pCount--; break;
+					case -1 : blocks1nCount--; break;
+					case -10 : blocks10nCount--; break;
+					case -100 : blocks100nCount--; break;
+				}
+				blocks.splice(i, 1);
+				createjs.Tween.get(deadChip)
+					.to({alpha:0, visible:false}, 500)
+					.call(handleTweenDeadComplete);
+			} else
+			  i++;
+		}
+		if (state == 1) {
+			console.log("Clearing Selects");
+			selectCountp1 = selectCountp10 = selectCountp100 = 0;
+			selectCountn1 = selectCountn10 = selectCountn100 = 0;		
+			clearSelects(blocks1p);
+			clearSelects(blocks10p);
+			clearSelects(blocks100p);
+			clearSelects(blocks1n);
+			clearSelects(blocks10n);
+			clearSelects(blocks100n);
+		}
+	}
+
+	function clearBlammos() {
+		while (blammos.length > 0) {
+			stage.removeChild(blammos.pop());
+		}
+		updateInProgress = false;
+	}
+	
+	function handleTween1Complete() {
+		this.onTheMove = false;
+		activeCount1--;
+		if (activeCount1 == 0) {
+			kill(blocks1p,blocks1pCount,blocks1n,blocks1nCount);
+		}
+	}
+	function handleTweenDeadComplete() {
+		stage.removeChild(this);
+	}
+	function handleTween10Complete() {
+		this.onTheMove = false;
+		activeCount10--;
+		if (activeCount10 == 0)
+			kill(blocks10p,blocks10pCount,blocks10n,blocks10nCount);
+	}
+	function handleTween100Complete() {
+		this.onTheMove = false;
+		activeCount100--;
+		if (activeCount100 == 0)
+			kill(blocks100p,blocks100pCount,blocks100n,blocks100nCount);
+	}
+
+   	
+	function hitTest(chip1,chip2) {
+		var distance = Math.sqrt(Math.pow(chip1.x-chip2.x,2)+Math.pow(chip1.y-chip2.y,2));
+		return (distance < RADIUS*2);
+	}
+	
+	function handleTrashCanLoad(event) {
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		stage.addChild(bitmap);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+
+		bitmap.x = 120;
+		bitmap.y = 420;
+//		this.scaleX = this.scaleY = this.scale = .6;
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+		bitmap.on("click", function (evt) {
+			updateInProgress = true;
+			blowEmUp(1);
+			unGroupContainer.visible = false;
+			groupContainer.visible = false;
+		});
+	}
+	function handleResetButtonLoad(event) {
+	
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		var text = new createjs.Text("Start Over", "12px Arial", "#000000");
+        text.x = 20;
+        text.y = 450;
+        text.textBaseline = "alphabetic";
+        container.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 45;
+		bitmap.y = 415;
+		bitmap.on("click",function (evt) {
+/*			for (var i = 0; i < blocks1pCount; i++) 
+				console.log("blockp1 " + blocks1p[i].x + "," + blocks1p[i].y);
+			for (var i = 0; i < blocks1nCount; i++) 
+				console.log("blockn1 " + blocks1n[i].x + "," + blocks1n[i].y);
+			for (var i = 0; i < blocks10pCount; i++) 
+				console.log("blockp10 " + blocks10p[i].x + "," + blocks10p[i].y);
+			for (var i = 0; i < blocks10nCount; i++) 
+				console.log("blockn10 " + blocks10n[i].x + "," + blocks10n[i].y);
+			for (var i = 0; i < blocks100pCount; i++) 
+				console.log("blockp100 " + blocks100p[i].x + "," + blocks100p[i].y);
+			for (var i = 0; i < blocks100nCount; i++) 
+				console.log("blockn100 " + blocks100n[i].x + "," + blocks100n[i].y);
+*/			reset();
+		});
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+	}
+	
+	function reset() {
+
+		removeAllChildren(blocks1p);
+		removeAllChildren(blocks1n);
+		removeAllChildren(blocks10p);
+		removeAllChildren(blocks10n);
+		removeAllChildren(blocks100p);
+		removeAllChildren(blocks100n);
+		blocks1pCount = blocks10pCount = blocks100pCount = 0;
+		blocks1nCount = blocks10nCount = blocks100nCount = 0;
+		curPV = 100;
+		clickCountPos = 0;
+		clickCountNeg = 0;
+		currentAlpha = 1;
+		currentRow = 1;
+		currentPosCol = 500;
+		currentPosRow = 60;
+		currentNegCol = 500;
+		currentNegRow = 230;
+		currentPosCol10 = 285;
+		currentPosRow10 = 100;
+		currentNegCol10 = 285;
+		currentNegRow10 = 260;
+		currentPosCol100 = 80;
+		currentPosRow100 = 100;
+		currentNegCol100 = 80;
+		currentNegRow100 = 240;
+		selectCountp1 = 0;
+	    selectCountp10 = 0;
+		selectCountp100 = 0;
+		selectCountn1 = 0;
+	    selectCountn10 = 0;
+		selectCountn100 = 0;	
+		showPlaceValue(false);
+		showHorGrid(false);
+		showVerGrid(false);
+		pVShow.hs.alpha = .2;
+		pVShow.selected = false;
+		horShow.hs.alpha = .2;
+		horShow.selected = false;
+		vertShow.hs.alpha = .2;
+		vertShow.selected = false;
+		update = true;
+	}
+	
+	function removeAllChildren(blocks) {
+		while (blocks.length > 0) 
+			stage.removeChild(blocks.pop());
+	}
+	function handleUnGroupButtonLoad(event) {
+		unGroupContainer = new createjs.Container();
+		unGroupContainer.x = 170;
+		unGroupContainer.y = 400;
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		unGroupContainer.addChild(bitmap);
+		var text = new createjs.Text("Ungroup", "12px Arial", "#000000");
+        text.x = 0;
+        text.y = 50;
+        text.textBaseline = "alphabetic";
+        unGroupContainer.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 25;
+		bitmap.y = 15;
+		unGroupContainer.visible = false;
+		stage.addChild(unGroupContainer);
+		bitmap.on("click",function (evt) {
+			unGroup();
+		});
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+	}
+	function handleGroupButtonLoad(event) {
+		groupContainer = new createjs.Container();
+		groupContainer.x = 170;
+		groupContainer.y = 400;
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		groupContainer.addChild(bitmap);
+		var text = new createjs.Text("Group", "12px Arial", "#000000");
+        text.x = 5;
+        text.y = 50;
+        text.textBaseline = "alphabetic";
+        groupContainer.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 25;
+		bitmap.y = 15;
+		groupContainer.visible = false;
+		stage.addChild(groupContainer);
+		bitmap.on("click",function (evt) {
+			console.log(selectCountp1 + ":" + selectCountn1 + ":" + selectCountp10 + ":" + selectCountn10);
+			if (selectCountp1 == 10)
+				group1(blocks1p);
+			else if (selectCountn1 == 10)
+				group1(blocks1n);
+			else if (selectCountp10 == 10)
+				group10(blocks10p);
+			else if (selectCountn10 == 10)
+				group10(blocks10n);
+			selectCountp1 = selectCountn1 = selectCountp10 = selectCountn10 = 0;
+			updateGroupUnGroup();
+		});
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+	}
+	
+	function showPlaceValue(show){
+		if (show) {
+			placeValueLabelC100.visible = false;
+			placeValueLabelC10.visible = false;
+			placeValueLabelC1.visible = false;
+			pvShiftC.visible = false;
+			
+		} else {
+			pvShiftC.visible = true;
+			switch (curPV) {
+				case 100 : placeValueLabelC100.visible = true; break;
+				case 10 : placeValueLabelC10.visible = true; break;
+				case 1 : placeValueLabelC1.visible = true; break;
+			}
+		}
+		update = true;
+	}
+	function showHorGrid(show){
+		if (show) {
+			horizLineC.visible = false;			
+		} else {
+			horizLineC.visible = true;
+		}
+		update = true;
+	}
+	function showVerGrid(show){
+		if (show) {
+			placeValueC.visible= false;
+		} else {
+			placeValueC.visible= true;
+		}
+		update = true;
+	}
+
+	function deleteRod(block) {
+		activeCount++;
+		createjs.Tween.get(block)
+		.to({alpha:0, visible:false}, 500)
+		.call(handleDeleteTweenComplete,block);
+	}
+	function handleDeleteTweenComplete(block) {
+		activeCount--;
+//		stage.removeChild(block);
+	}
+	function tick(event) {
+		if (update || activeCount || activeCount1 || 
+		    activeCount10 || activeCount100 || updateInProgress) {
+			update = false; // only update once
+			stage.update(event);
+		}
+	}
+	
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+function getOut() {
+return;
+	var outtxt = "";
+	var cell = 0;
+	var dir = 0;
+	for (var i = 0; i < chips.length; i++) {
+		if (chips[i].alpha > 0) {
+			dir = (chips[i].rotated ? 1 : 0);
+			cell = chips[i].col + "," + chips[i].row + "," + (chips[i].units-1) + "," + dir;
+			outtxt += ":"+cell;
+		}
+	}
+	if (qn != null) {
+		parent.postMessage(qn+":"+outtxt,'*');
+		console.log(qn+":"+outtxt);
+	}	
+}
+
+function play_single_sound() {
+		document.getElementById('audiotag1').play();
+}
+
+</script>
+</head>
+<body onload="init();">
+<div>
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
+  	<canvas id="testCanvas" width="700" height="480"></canvas>
+  </div>
+</div>
+
+</div>
+<audio id="audiotag1" src="../audio/boomboom.mp3" preload="auto"></audio>
+</body>
+</html>

@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Base-10 Blocks Multiplication Virtual Manipulative</title>
+    <meta name="keywords" content="Virtual Manipulative, Base-10 blocks, base blocks, OER, Open Education Resources, math, math manipulative, problem solving, pattern blocks, algebra">
+	<meta name="description" content="OpenVML - OER Library of Virtual Manipulatives.  Base-10 Blocks for Multiplication">
+
+	<script src="../lib/easeljs-NEXT.combined.js"></script>
+	<script type="text/javascript" src="../lib/tweenjs-NEXT.combined.js"></script>
+
+<script id="editable">
+    
+	/*
+	   Description:  Developed by William Meacham and Frank Marfai in collaboration with Phoenix College and Scottsdale Community College.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+	*/
+	
+	var canvas, stage, container;
+	var unGroupContainer, groupContainer;
+	var placeValueContainer;
+	var savedBounds;
+	var blocks1p = [];
+	var blocks10p = [];
+	var blocks10Hp = [];
+	var blocks100p = [];
+	var blammos = [];
+	var blocks1pCount = 0;
+	var blocks10pCount = 0;
+	var blocks10HpCount = 0;
+	var blocks100pCount = 0;
+	var massMove = [];
+	var downTime;
+	var clickCount = 0;
+	var update = true;
+	var currentAlpha = 1;
+	var currentRow = 1;
+	var currentPosCol = 65;
+	var currentPosRow = 335;
+	var currentPosCol10 = 45;
+	var currentPosRow10 = 280;
+	var currentPosColH10 = 100;
+	var currentPosRowH10 = 335;
+	var currentPosCol100 = 100;
+	var currentPosRow100 = 280;
+	var current100;
+	var yAxis = 0, xAxis = 0;
+	var blammoSS;
+	var blammo;
+	var blammos = [];
+	var questionText = "";
+	var snapToGrid = true;
+	var tweensOnTheRun = 0;
+	var loaded100s = loaded10s = loadedV10s = loaded1s = false;
+	var lastTap = 0;
+	var timeout;
+	var TILE_SIZE = 10;
+	var RADIUS = TILE_SIZE/2;
+	var selectCountp1 = 0, selectCountp10 = 0, selectCountpH10 = 0,	selectCountp100 = 0;
+	var setTheStage, fillTheStage, willyNillyStage;
+	var currentMode = 1, hVal = 0, vVal = 0;
+	var stageVal100 = 0, stageVal10H = 0, stageVal10V = 0, stageVal1 = 0;
+	
+	function init() {
+		qn = getParameterByName("qn");
+		initValue = getParameterByName("inVal");
+		if (initValue != null && initValue != "") {
+//			console.log(initValue);
+			inRods = initValue.split(':');
+		}
+		var qt = getParameterByName("qt");
+		if (qt != null && qt != "") {
+			questionText = qt;
+		}
+		// create stage and point it to the canvas:
+		canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage(canvas);
+		resize();
+		// enable touch interactions if supported on the current device:
+		createjs.Touch.enable(stage);
+
+		// enabled mouse over / out events
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
+
+	    container = new createjs.Container();
+		stage.addChild(container);
+		blammoSS = new createjs.SpriteSheet({
+			framerate: 36,
+			"images": ["../images/b.png"],
+			"frames": {width:66.66666, height:66.66666},
+			"animations": {
+				"blammo":{ 
+					frames:[0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+					next: false
+				}
+			}
+		});
+		blammo = new createjs.Sprite(blammoSS,"blammo");
+		blammo.x = 200;
+		blammo.regX = 33;
+		blammo.y = 200;
+		blammo.regY = 33;
+		createStage();
+
+
+		createjs.Ticker.setFPS(20);
+		createjs.Ticker.addEventListener("tick", stage);
+	}
+	function resize() {
+			var canvas = document.querySelector('canvas');
+			var ctx = canvas.getContext('2d');
+
+		// Our canvas must cover full height of screen
+		// regardless of the resolution
+		console.log("resizing");
+		var height = window.innerHeight*.95;
+		
+		// So we need to calculate the proper scaled width
+		// that should work well with every resolution
+		var ratio = canvas.width/canvas.height;
+		var width = height * ratio;
+		
+		canvas.style.width = width+'px';
+		canvas.style.height = height+'px';
+	}
+	function stop() {
+		createjs.Ticker.removeEventListener("tick", tick);
+	}
+	function createStage() {
+		var resetImage = new Image();
+		var trashCanImage = new Image();
+		resetImage.src = "../images/resetButton.png";
+		resetImage.onload = handleResetButtonLoad;
+		trashCanImage.src = "../images/TrashCan.JPG";
+		trashCanImage.onload=handleTrashCanLoad;
+		
+		var graphics = new createjs.Graphics();
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").drawRect(5, 5, 580, 470);		// Border
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").drawRect(10, 375, 570, 95);   // Tray
+		graphics.setStrokeStyle(2).beginStroke("#D3D3D3").beginFill("#FFFFFF").drawRect(10, 10, 570, 360);   // Grid
+ //       graphics.alpha=0.25;
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3");
+        for (var i = 0; i < 37; i++)
+        	graphics.mt(10,10+i*TILE_SIZE).lt(580,10+i*TILE_SIZE);
+        for (var i = 0; i < 57; i++)
+        	graphics.mt(20+i*TILE_SIZE,10).lt(20+i*TILE_SIZE,370);
+
+		var shape = new createjs.Shape(graphics);
+        container.addChild(shape);
+		stage.addChild(drawUnit1(30,400,"#FFFF00",1,0));
+		stage.addChild(drawUnit1(200,400,"#FFFF00",1,1));
+		stage.addChild(drawUnit10(50,420,"#00FF00",10));
+		stage.addChild(drawUnit10H(200,430,"#00FF00",10));
+		stage.addChild(drawUnit100(110,420,"#FF0000",100));
+		
+		setTheStage = createRadioButtonSelect(250,390,setStage,"Set The Stage",true);
+		fillTheStage = createRadioButtonSelect(250,415,fillStage,"Fill The Stage",false);
+		willyNillyStage = createRadioButtonSelect(250,440,willyNilly,"Free Play",false);
+		stage.addChild(setTheStage,fillTheStage,willyNillyStage);
+
+		stage.addChild(dropZone());
+	}
+
+	function setStage() {
+		return;
+		currentMode = 1;
+		setTheStage.hs.alpha = 1;
+		fillTheStage.hs.alpha = willyNillyStage.hs.alpha = .2;
+		fillTheStage.selected = willyNillyStage.selected = false;
+		current100.visible = false;
+		current100.alpha = .2;
+	}
+	function fillStage() {
+		if (currentMode != 1)
+			return;
+		currentMode = 2;
+		fillTheStage.hs.alpha = 1;
+		setTheStage.hs.visible = false;
+		willyNillyStage.hs.alpha = .2;
+		setTheStage.selected = willyNillyStage.selected = false;
+		current100.visible = true;
+		current100.alpha = 1;
+	}
+	function willyNilly() {
+		if (currentMode == 3)
+			return;
+		currentMode = 3;
+		willyNillyStage.hs.alpha = 1;
+		fillTheStage.hs.visible = false;
+		setTheStage.hs.visible = false;
+		fillTheStage.selected = setTheStage.selected = false;
+		current100.visible = true;
+		current100.alpha = 1;
+	}
+	
+	function dropZone() {
+		placeValueContainer = new createjs.Container();
+		placeValueContainer.x = 50;
+		placeValueContainer.y = 20;
+		var bg = new createjs.Shape();
+		bg.graphics.setStrokeStyle(2).beginStroke("#000000").mt(0,0).lt(0,310).lt(380,310);
+		placeValueContainer.addChild(bg);
+//		var hundredsPlace = createText(130,15,"100's");
+//		var tensPlace = createText(350,15,"10's");
+//		var onesPlace = createText(500,15,"1's");
+//		placeValueContainer.addChild(hundredsPlace,tensPlace,onesPlace);
+		return placeValueContainer;
+	}
+	
+
+
+
+	function createText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+	function createTitleText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "bold 20px Arial", "BLUE");
+		hsText.shadow = 20;
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+
+	
+	function createRadioText(xloc,yloc,label) {
+		var hsText = new createjs.Text(label, "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        return hsText;
+    }
+	
+	function createRadioButtonSelect(xloc,yloc, callFunction, text, selected) {
+		var rC = new createjs.Container();
+		rC.x = xloc+15;
+		rC.y = yloc;
+		rC.selected = selected;
+		rC.addChild(createRadioText(35,5,text));
+		var hs = new createjs.Shape();
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(5, 5, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.x = 15;
+		hs.y = 5;
+		rC.addChild(hs);
+		rC.hs = hs;
+		if (selected) 
+			hs.alpha = 1;
+		else
+			hs.alpha = .2;
+		hs.on("rollover", function (evt) {
+			if (!rC.selected)
+				hs.alpha = .6;
+			update = true;   
+		});
+		hs.on("rollout", function (evt) {
+			if (!rC.selected)
+				hs.alpha = .2;
+			update = true;
+		});
+		hs.on("click", function (evt) {
+			rC.selected = true;
+			callFunction(rC.selected);
+		});		
+		return rC;
+	}
+
+	function startMassMovement(evt) {
+		massMove = [];
+		for (var i = 0; i < blocks1p.length; i++) {
+			if (blocks1p[i].alpha == .5) {
+				blocks1p[i].offset = {x: blocks1p[i].x - evt.stageX, y: blocks1p[i].y - evt.stageY};
+				massMove.push(blocks1p[i]);
+			}
+		}
+		for (var i = 0; i < blocks1n.length; i++) {
+			if (blocks1n[i].alpha == .5) {
+				blocks1n[i].offset = {x: blocks1n[i].x - evt.stageX, y: blocks1n[i].y - evt.stageY};
+				massMove.push(blocks1n[i]);
+			}
+		}
+		for (var i = 0; i < blocks10p.length; i++) {
+			if (blocks10p[i].alpha == .5) {
+				blocks10p[i].offset = {x: blocks10p[i].x - evt.stageX, y: blocks10p[i].y - evt.stageY};
+				massMove.push(blocks10p[i]);
+			}
+		}
+		for (var i = 0; i < blocks10n.length; i++) {
+			if (blocks10n[i].alpha == .5) {
+				blocks10n[i].offset = {x: blocks10n[i].x - evt.stageX, y: blocks10n[i].y - evt.stageY};
+				massMove.push(blocks10n[i]);
+			}
+		}
+		for (var i = 0; i < blocks100p.length; i++) {
+			if (blocks100p[i].alpha == .5) {
+				blocks100p[i].offset = {x: blocks100p[i].x - evt.stageX, y: blocks100p[i].y - evt.stageY};
+				massMove.push(blocks100p[i]);
+			}
+		}
+		for (var i = 0; i < blocks100n.length; i++) {
+			if (blocks100n[i].alpha == .5) {
+				blocks100n[i].offset = {x: blocks100n[i].x - evt.stageX, y: blocks100n[i].y - evt.stageY};
+				massMove.push(blocks100n[i]);
+			}
+		}
+	}
+				
+	function updateMassMovement(evt) {
+		for (var i = 0; i < massMove.length; i++) {
+			massMove[i].x = evt.stageX + massMove[i].offset.x;
+			massMove[i].y = evt.stageY + massMove[i].offset.y;
+		}
+	}
+	
+	function drawUnit1(xloc,yloc,color,val,dir) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000");
+		bg.graphics.beginFill(color).dr(0,0,TILE_SIZE,TILE_SIZE).endFill();
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = RADIUS;
+		c.regY = RADIUS; 
+		c.onTheMove = false;
+		c.greenMile = false;
+		c.color = color;
+		c.dir = dir;
+
+		c.cursor = "move";
+		c.cache(0,0,TILE_SIZE,TILE_SIZE);
+		c.on("mousedown", function (evt) {
+			if (currentMode != 3)
+				return;
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+		});
+
+		c.on("click", function (evt) {
+			var now = new Date().getTime();
+			var timesince = now - downTime;
+			if (timesince > 400) {
+				console.log("to slow for click");
+				clickCount = 0;
+				downTime = now;
+				return;
+			}
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			clickCount++;
+			if (c.y > 10 && c.y < 380) {  // On the stage.  Shade it, but really not a function at this point
+				return;
+				if (c.alpha == .5) {
+					c.val == 1 ? selectCountp1-- : selectCountn1--;
+					c.alpha = 1;
+				} else {
+					c.val == 1 ? selectCountp1++ : selectCountn1++;
+					c.alpha = .5;
+				}
+			} else if (c.y > 380) {   // It is off the stage.  Behavior dependent on current mode.
+				if (currentMode == 3 || (currentMode == 2 && loaded1s))
+					return;              // Freeplay. or Filling 1's is done.  Click means nothing
+				var newY,newX;
+				if (currentMode == 1) {
+					if (dir == 0) { // Setting stage and clicking to vertical axis
+						if (vVal >= 30)
+							return;
+						  vVal += 1;
+						  newY = c.row = 335 - vVal*10;
+						  newX = c.col = 45;
+						  c.roll = "Stage";
+					} else if (dir == 1) { // Setting stage and clicking to horiz axis
+						if (hVal >= 35)
+							return;
+						  hVal += 1;
+						  newY = c.row = 335;
+						  newX = c.col = 45 + hVal * 10;
+						  c.roll = "Stage";
+					}
+					tweensOnTheRun++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) 
+					.call(handleTweenComplete);
+					c.index = 1;
+					blocks1pCount++;
+					blocks1p.push(c);
+					stage.addChild(drawUnit1(xloc,yloc,color,val));
+					return;
+				} else	if (currentMode == 2) {
+					console.log("Adding to stage in mode 2    " + stageVal1 + "," + hVal%10 + "," + vVal%10);
+					if (stageVal1 == hVal%10 * vVal%10) {    // Max 1's on stage
+						c.scaleX = c.scaleY = c.scale = .8;
+						return;
+					}
+					var point = new createjs.Point();
+					find1Spot(point);
+					c.col = newX = point.x;
+					c.row = newY = point.y;
+					stageVal1 += 1;
+				} else {				
+					c.row = currentPosRow;
+					c.col = currentPosCol;
+					newX = currentPosCol;
+					newY = currentPosRow;
+					if (newY > 330)
+						currentPosCol += 10;
+					else
+						currentPosRow -= 10;
+				}
+				tweensOnTheRun++;
+				c.onTheMove = true;
+				c.index = 1;
+				c.mode = currentMode;
+
+				var cols = Math.floor(hVal/10);
+				var rows = Math.floor(vVal/10);
+				console.log(cols + ":" + rows);
+				var unit = c;
+				col = 100 + cols * 100;
+				row = 280 + rows * 100;
+				loaded1s = true;
+				colsCount = hVal % 10;
+				rowsCount = vVal % 10;
+				for (var i = 0; i < rowsCount; i++, row -= 10, col = 100 + cols * 100) {
+					for (var j = 0; j < colsCount; j++, col += 10) {
+						console.log("Tweening to " + col + ":" + row);
+						unit.col = newX = col;
+						unit.row = newY = row;
+						tweensOnTheRun++;
+						unit.onTheMove = true;
+						createjs.Tween.get(unit, {loop: false}, null, false) 
+						.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) 
+						.call(handleTweenComplete);
+						unit.index = 1;
+						blocks1pCount++;
+						blocks1p.push(unit);
+						unit = drawUnit1(xloc,yloc,color,val);	
+						stage.addChild(unit);
+					}
+				}
+				stage.addChild(drawUnit1(xloc,yloc,color,val));
+				return;
+			}  
+			//updateGroupUngroup();
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (currentMode != 3)
+				return;
+			update = true;
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2)
+				return;
+			
+			if (c.x < 10 || c.x  > 580 || c.y < 10 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					tweensOnTheRun++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+					.call(handleTweenComplete);
+				}
+			} else {
+				if (snapToGrid) {
+					c.x = Math.round((c.x-5)/TILE_SIZE)*TILE_SIZE+5;
+					c.y = Math.round((c.y-5)/TILE_SIZE)*TILE_SIZE+5;
+				}
+				if (c.y > 330) {
+					currentPosCol = c.x + 10;
+					currentPosRow = c.y;
+				} else {
+					currentPosRow = c.y - 10;
+					currentPosCol = c.x;
+				}
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					blocks1pCount++;
+					blocks1p.push(c);
+					stage.addChild(drawUnit1(xloc,yloc,color,val));
+				}
+			}
+			getOut();
+
+		});
+		
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+			update = true;
+		});
+
+		return c;
+	}
+
+	
+	
+	function drawUnit10(xloc,yloc,color,val) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(.5).beginStroke("#000000");
+		for (var i = 0; i < 10; i++) {
+			bg.graphics.beginFill(color).dr(0,i*TILE_SIZE,TILE_SIZE,TILE_SIZE);
+		}
+		bg.graphics.endFill();
+		bg.graphics.setStrokeStyle(3).dr(0,0,TILE_SIZE,TILE_SIZE*10);
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = RADIUS;
+		c.regY = 50; 
+		c.onTheMove = false;
+		c.greenMile = false;
+		c.color = color;
+
+		c.cursor = "move";
+		c.scaleX = c.scaleY = c.scale = .8;
+		c.cache(0,0,TILE_SIZE,TILE_SIZE*10);
+
+		c.on("mousedown", function (evt) {
+			if (currentMode != 3)
+				return;
+			c.scaleX = c.scaleY = c.scale = 1;
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+
+		});
+		c.on("click", function (evt) {
+			var currentTime = new Date().getTime();
+			var tapLength = currentTime - lastTap;
+			lastTap = currentTime;
+			var clickLength = new Date().getTime() - downTime;
+			clearTimeout(timeout);
+			if (clickLength > 300)  
+				return;  // To slow for click
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2) 
+				return;
+			// Not on the stage.  Move it to the stage.  No double click happening here
+			if (c.y > 380) {    
+				if (currentMode == 3)
+					return;              // Freeplay.  Click means nothing
+				var newY,newX;
+				if (currentMode == 1) { // Setting stage and clicking to vertical axis
+					if (vVal >= 20)
+						return;
+					  vVal += 10;
+					  newY = c.row = 380 - vVal*10;
+					  newX = c.col = 45;
+					  c.roll = "Stage";
+				} else {
+					c.row = currentPosRow;
+					c.col = currentPosCol;
+					newX = currentPosCol;
+					newY = currentPosRow;
+					if (newY > 330)
+						currentPosCol += 10;
+					else
+						currentPosRow -= 10;
+					if (currentPosCol10 < 55) {
+						currentPosRow10 -= 100;
+						currentPosRow = currentPosRow10+45;
+						currentPosCol = currentPosCol10;
+					} else 
+						currentPosCol10 += 10;
+				}
+				tweensOnTheRun++;
+				c.onTheMove = true;
+				createjs.Tween.get(c, {loop: false}, null, false) // get a new tween targeting circle
+				.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) // tween x/y/alpha properties over 1s (1000ms) with ease out
+				.call(handleTweenComplete);
+				c.index = 1;
+				blocks10pCount++;
+				blocks10p.push(c);
+				stage.addChild(drawUnit10(xloc,yloc,color,val));		
+				return;
+			} else {  // Is on the stage.  
+				if (c.alpha == .5) {
+					c.val == 10 ? selectCountp10-- : selectCountn10--;
+					c.alpha = 1;
+				} else {
+					c.val == 10 ? selectCountp10++ : selectCountn10++;
+					c.alpha = .5;
+				}
+				console.log(selectCountp1 + ":" + selectCountn1 + ":" + selectCountp10 + ":" + selectCountn10);
+
+			}
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (currentMode != 3)
+				return;
+			update = true;
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2) {
+				if (c.y > 380)
+					c.scaleX = c.scaleY = c.scale = .8;
+				return;
+			}
+			if (c.x < 10 || c.x  > 580 || c.y < 70 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					tweensOnTheRun++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc, scale: .8, scaleX: .8, scaleY: .8}, 1000, createjs.Ease.get(1))
+					.call(handleTweenComplete);
+				}
+			} else {
+				if (snapToGrid) {
+					c.x = Math.round((c.x-5)/TILE_SIZE)*TILE_SIZE + 5;
+					c.y = Math.round((c.y-50)/TILE_SIZE)*TILE_SIZE+50;
+				}
+				if (c.x < 55) {
+					currentPosRow10 = c.y - 100;
+					currentPosCol10 = c.x;
+				} else {
+					currentPosRow10 = c.y;
+					currentPosCol10 = c.x + 10;
+				}
+				c.scaleX = c.scaleY = c.scale = 1;
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					blocks10pCount++;
+					blocks10p.push(c);
+					stage.addChild(drawUnit10(xloc,yloc,color,val));
+				}
+			}
+			getOut();
+
+		});
+		
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+
+			update = true;
+		});
+
+		return c;
+	}
+	function drawUnit10H(xloc,yloc,color,val) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(.5).beginStroke("#000000");
+		for (var i = 0; i < 10; i++) {
+			bg.graphics.beginFill(color).dr(i*TILE_SIZE,0,TILE_SIZE,TILE_SIZE);
+		}
+		bg.graphics.endFill();
+		bg.graphics.setStrokeStyle(3).dr(0,0,TILE_SIZE * 10,TILE_SIZE);
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = 50;
+		c.regY = RADIUS; 
+		c.onTheMove = false;
+		c.greenMile = false;
+		c.color = color;
+
+		c.cursor = "move";
+		c.scaleX = c.scaleY = c.scale = .8;
+		c.cache(0,0,TILE_SIZE*10,TILE_SIZE);
+
+		c.on("mousedown", function (evt) {
+			if (currentMode != 3)
+				return;
+			c.scaleX = c.scaleY = c.scale = 1;
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+
+		});
+		c.on("click", function (evt) {
+			var currentTime = new Date().getTime();
+			var tapLength = currentTime - lastTap;
+			lastTap = currentTime;
+			var clickLength = new Date().getTime() - downTime;
+			clearTimeout(timeout);
+			if (clickLength > 300)  
+				return;  // To slow for click
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			// Not on the stage.  Move it to the state.  No double click happening here
+			if (c.y > 380) {    
+				if (currentMode == 3)
+					return;              // Freeplay.  Click means nothing
+				var newY,newX;
+				if (currentMode == 1) { // Setting stage and clicking to vertical axis
+					if (hVal >= 30)
+						return;
+					  hVal += 10;
+					  newY = c.row = 335;
+					  newX = c.col = hVal * 10;
+					  c.roll = "Stage";
+				} else {
+					c.row = currentPosRowH10;
+					c.col = currentPosColH10;
+					newX = currentPosColH10;
+					newY = currentPosRowH10;
+					if (currentPosRowH10 > 330) {
+						currentPosColH10 += 100;
+						currentPosCol = currentPosColH10 - 45;
+						currentPosRow = currentPosRowH10;
+					} else
+						currentPosRowH10 -= 10;
+				}
+				tweensOnTheRun++;
+				c.onTheMove = true;
+				createjs.Tween.get(c, {loop: false}, null, false) // get a new tween targeting circle
+				.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) // tween x/y/alpha properties over 1s (1000ms) with ease out
+				.call(handleTweenComplete);
+				c.index = 1;
+				blocks10HpCount++;
+				blocks10Hp.push(c);
+				stage.addChild(drawUnit10H(xloc,yloc,color,val));
+				return;
+			} else {  // Is on the stage.  
+				if (c.alpha == .5) {
+					c.val == 10 ? selectCountp10-- : selectCountn10--;
+					c.alpha = 1;
+				} else {
+					c.val == 10 ? selectCountp10++ : selectCountn10++;
+					c.alpha = .5;
+				}
+			}
+			//updateGroupUngroup();
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (currentMode != 3)
+				return;
+			update = true;
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2) {
+				if (c.y > 380)
+					c.scaleX = c.scaleY = c.scale = .8;
+				return;
+			}			
+			if (c.x < 10 || c.x  > 580 || c.y < 70 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					tweensOnTheRun++;
+					c.onTheMove = true;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc, scale: .8, scaleX: .8, scaleY: .8}, 1000, createjs.Ease.get(1))
+					.call(handleTweenComplete);
+				}
+			} else {
+				if (snapToGrid) {
+					c.x = Math.round((c.x-50)/TILE_SIZE)*TILE_SIZE + 50;
+					c.y = Math.round((c.y-5)/TILE_SIZE)*TILE_SIZE+5;
+				}
+				if (c.y > 325) {
+					currentPosRowH10 = c.y;
+					currentPosColH10 = c.x + 100;
+				} else {
+					currentPosRowH10 = c.y - 10;
+					currentPosColH10 = c.x;
+				}
+				c.scaleX = c.scaleY = c.scale = 1;
+
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					blocks10HpCount++;
+					blocks10Hp.push(c);
+					stage.addChild(drawUnit10H(xloc,yloc,color,val));
+				}
+			}
+			getOut();
+
+		});
+		
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+
+			update = true;
+		});
+
+		return c;
+	}
+	function drawUnit100(xloc,yloc,color,val) {
+		var c = new createjs.Container();
+		var bg = new createjs.Shape();
+		var pt = RADIUS/2;
+		bg.graphics.setStrokeStyle(.5).beginStroke("#000000");
+		for (var i = 0; i < 10; i++) {
+		  for (var j = 0; j < 10; j++) 
+			bg.graphics.beginFill(color).dr(j*TILE_SIZE,i*TILE_SIZE,TILE_SIZE,TILE_SIZE);
+		}
+		bg.graphics.endFill();
+		bg.graphics.setStrokeStyle(3).dr(0,0,TILE_SIZE*10,TILE_SIZE*10);
+//		bg.alpha = 0.5;
+		c.addChild(bg);	
+		c.x = xloc;
+		c.y = yloc;
+		c.index = -1;
+		c.val = val;
+		c.alpha = 1;
+		c.regX = 50;
+		c.regY = 50; 
+		c.onTheMove = false;
+		c.greenMile = false;
+
+		c.cursor = "move";
+		c.scaleX = c.scaleY = c.scale = .8;
+		c.cache(0,0,TILE_SIZE*10,TILE_SIZE*10);
+		current100 = c;
+		if (currentMode == 1)
+			c.visible = false;
+		c.on("mousedown", function (evt) {
+			if (currentMode != 3)
+				return;
+			c.scaleX = c.scaleY = c.scale = 1;
+			downTime = new Date().getTime();
+			c.oldX = c.x;
+			c.oldY = c.y;
+//			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			if (this.alpha == .5) {           // Selected, so we need to drag all selected
+				startMassMovement(evt);
+			 }
+
+		});
+
+		c.on("click", function (evt) {
+			var currentTime = new Date().getTime();
+			var tapLength = currentTime - lastTap;
+			lastTap = currentTime;
+			var clickLength = new Date().getTime() - downTime;
+			clearTimeout(timeout);
+			if (clickLength > 300)  
+				return;  // To slow for click
+			if (Math.abs(c.oldX - c.x) >= 2  || Math.abs(c.oldY - c.y) >= 2)
+				return;
+			// Not on the stage.  Move it to the state.  No double click happening here
+			if (c.y > 380) { 
+				if (currentMode == 3 || loaded100s)
+					return;              // Freeplay.  Click means nothing
+				var newY,newX;
+				if (currentMode == 2) {
+					console.log("Adding to stage in mode 2    " + stageVal100/100 + "," + Math.floor(hVal/10) + "," + Math.floor(vVal/10));
+					if (stageVal100/100 == Math.floor(hVal/10) * Math.floor(vVal/10)) {    // Max 100's on stage
+						c.scaleX = c.scaleY = c.scale = .8;
+						return;
+					}
+					console.log("searching for spot");
+					var point = new createjs.Point();
+					find100Spot(point);
+					c.col = newX = point.x;
+					c.row = newY = point.y;
+					stageVal100 += 100;
+				} else {  // Disabled for now
+					c.row = currentPosRow100;
+					c.col = currentPosCol100;
+					newX = currentPosCol100;
+					newY = currentPosRow100;
+					currentPosCol100 += 100;
+					currentPosCol10 = currentPosCol100 - 45;
+					currentPosRow10 = currentPosRow100;
+					currentPosRowH10 = currentPosRow100 - 55;
+					currentPosColH10 = currentPosCol100 - 100;
+					currentPosRow = currentPosRow100 - 55;
+					currentPosCol = currentPosCol100 - 45;
+				}
+				var cols = Math.floor(hVal/10);
+				var rows = Math.floor(vVal/10);
+				console.log(cols + ":" + rows);
+				var unit = c;
+				col = 100;
+				row = 280;
+				loaded100s = true;
+				for (var i = 0; i < rows; i++, row -= 100, col = 100) {
+					for (var j = 0; j < cols; j++, col += 100) {
+						console.log("Tweening to " + col + ":" + row);
+						unit.col = newX = col;
+						unit.row = newY = row;
+						tweensOnTheRun++;
+						unit.onTheMove = true;
+						createjs.Tween.get(unit, {loop: false}, null, false) 
+						.to({x: newX, y: newY,alpha:currentAlpha, scale: 1, scaleX: 1, scaleY: 1}, 1000, createjs.Ease.get(1)) 
+						.call(handleTweenComplete);
+						unit.index = 1;
+						blocks100pCount++;
+						blocks100p.push(unit);
+						unit = drawUnit100(xloc,yloc,color,val);	
+						stage.addChild(unit);
+					}
+				}
+				stage.addChild(drawUnit100(xloc,yloc,color,val));
+				return;
+			} else {  // Is on the stage.  
+				if (c.alpha == .5) {
+					c.val == 100 ? selectCountp100-- : selectCountn100--;
+					c.alpha = 1;
+				} else {
+					c.val == 100 ? selectCountp100++ : selectCountn100++;
+					c.alpha = .5;
+				}
+				console.log(selectCountp1 + ":" + selectCountn1 + ":" + selectCountp10 + ":" + selectCountn10);
+
+			}
+ 			getOut();	
+		});
+		c.on("pressup", function (evt) {
+			if (currentMode != 3)
+				return;
+			update = true;
+			if (Math.abs(c.oldX - c.x) < 2 && Math.abs(c.oldY - c.y) < 2) {
+				if (c.y > 380)
+					c.scaleX = c.scaleY = c.scale = .8;
+				return;
+			}						
+			if (c.x < 70 || c.x  > 580 || c.y < 70 || c.y > 380) {
+				if (c.index != -1) {
+//					chips.splice(c.index,1);
+					deleteRod(c);
+				}
+				else {
+					tweensOnTheRun++;
+					c.onTheMove = true;
+					c.scaleX = c.scaleY = c.scale = .8;
+					createjs.Tween.get(c, {loop: false}, null, false) 
+					.to({x: xloc, y: yloc}, 1000, createjs.Ease.get(1))
+					.call(handleTweenComplete);
+				}
+			} else {
+				if (snapToGrid) {
+					c.x = Math.round((c.x-250)/TILE_SIZE)*TILE_SIZE+250;
+					c.y = Math.round((c.y-250)/TILE_SIZE)*TILE_SIZE+250;
+				}
+				currentPosRow100 = c.y;
+				currentPosCol100 = c.x + 100;
+				c.scaleX = c.scaleY = c.scale = 1;
+				if (c.index == -1) {
+					c.alpha = currentAlpha;
+					c.index = 1;
+					blocks100pCount++;
+					blocks100p.push(c);
+					stage.addChild(drawUnit100(xloc,yloc,color,val));
+				}
+			}
+			getOut();
+
+		});
+
+		c.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			if (this.alpha == .5)
+				updateMassMovement(evt);
+			update = true;
+		});
+		return c;
+	}	
+	
+	function find100Spot(point) {
+		point.x = 100, point.y = 280;
+		for (var j = 0; j < blocks100p.length; j++) {
+			if (Math.floor(blocks100p[j].col) == point.x && Math.floor(blocks100p[j].row) == point.y) {				// That spot is taken, try next
+				console.log(vVal + ":" + hVal);
+				console.log(point.x/100 + ":" + Math.floor(hVal/10));
+				if (point.x/100 < Math.floor(hVal/10)) {
+					point.x += 100;
+				} else {
+					point.x = 100;
+					point.y -= 100;
+				}
+			} else {
+				return;
+			}
+		}
+	}
+	function find10Spot(point) {
+		point.x = 100, point.y = 280
+		for (var j = 0; j < blocks10p.length; j++) {
+			if (Math.floor(blocks10p[j].col) == point.x && Math.floor(blocks10p[j].row) == point.y) {				// That spot is taken, try next
+				console.log(vVal + ":" + hVal);
+				console.log(point.x/100 + ":" + Math.floor(hVal/10));
+				if (point.x/100 < Math.floor(hVal/10)) {
+					point.x += 100;
+				} else {
+					point.x = 100;
+					point.y -= 100;
+				}
+			} else {
+				return;
+			}
+		}	
+	}
+	function find10HSpot(point) {
+		point.x = 100, point.y = 280
+		for (var j = 0; j < blocks100p.length; j++) {
+			if (Math.floor(blocks100p[j].col) == point.x && Math.floor(blocks100p[j].row) == point.y) {				// That spot is taken, try next
+				console.log(vVal + ":" + hVal);
+				console.log(point.x/100 + ":" + Math.floor(hVal/10));
+				if (point.x/100 < Math.floor(hVal/10)) {
+					point.x += 100;
+				} else {
+					point.x = 100;
+					point.y -= 100;
+				}
+			} else {
+				return;
+			}
+		}
+	}
+	function find1Spot(point) {
+		point.x = 55 + Math.floor(hVal/10)*100,
+		point.y = 325 - Math.floor(vVal/10)*100;
+		for (var j = 0; j < blocks1p.length; j++) {
+			console.log(blocks1p[j].mode + ":" + Math.floor(blocks1p[j].col) + "=" +  point.x + ":" +  Math.floor(blocks1p[j].row)  + "=" + point.y);
+			if (blocks1p[j].mode == 2) {
+				if (Math.floor(blocks1p[j].col) == point.x && Math.floor(blocks1p[j].row) == point.y) {				// That spot is taken, try next
+					if (point.x/100 < Math.floor(hVal/10)) {
+						point.x += 10;
+					} else {
+						point.x = 10;
+						point.y -= 10;
+					}
+				} else {
+					return;
+				}
+			}
+		}
+	}
+	function kill(pblocks,pcount,nblocks,ncount) {
+		for (var i = 0; i < pcount; i++) {
+			if (!pblocks[i].onTheMove) {
+				for (var j = i; j < ncount; j++) {
+					if (!nblocks[j].onTheMove) {
+						if (Math.abs(pblocks[i].x - nblocks[j].x) < 10 &&
+							Math.abs(pblocks[i].y - nblocks[j].y) < 10) {
+							pblocks[i].greenMile = true;
+							nblocks[j].greenMile = true;
+						}
+					}
+				}
+			}
+		}
+		blowEmUp(2);
+	}	
+	
+	function blowEmUp(event) {
+		blowEmUpBig(event,blocks1p);
+		blowEmUpBig(event,blocks10p);
+		blowEmUpBig(event,blocks10Hp);
+		blowEmUpBig(event,blocks100p);
+		setTimeout(clearBlammos, 3000);
+	}
+	function blowEmUpBig(event,blocks) {
+		for (var i = 0; i < blocks.length;) {
+			if ((event == 1 && blocks[i].alpha == .5) ||
+			    (event == 2 && blocks[i].greenMile)) {
+				var blammoClone = blammo.clone();
+				blammoClone.x = blocks[i].x;
+				blammoClone.y = blocks[i].y;
+				stage.addChild(blammoClone);
+				blammos.push(blammoClone);
+				var deadChip = blocks[i];
+				switch (blocks[i].val) {
+					case 1 : blocks1pCount--; break;
+					case 10 : blocks10pCount--; break;
+					case 100 : blocks100pCount--; break;
+					case -1 : blocks1nCount--; break;
+					case -10 : blocks10nCount--; break;
+					case -100 : blocks100nCount--; break;
+				}
+				blocks.splice(i, 1);
+				createjs.Tween.get(deadChip)
+					.to({alpha:0, visible:false}, 500);
+//				stage.removeChild(deadChip);
+			} else
+			  i++;
+		}
+	}
+
+	function clearBlammos() {
+		while (blammos.length > 0) {
+			stage.removeChild(blammos.pop());
+		}
+	}
+	function handleTweenComplete() {
+		this.onTheMove = false;
+		tweensOnTheRun--;
+//		kill();
+	}
+	
+	function handleTrashCanLoad(event) {
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		stage.addChild(bitmap);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+
+		bitmap.x = 450;
+		bitmap.y = 420;
+//		this.scaleX = this.scaleY = this.scale = .6;
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+		bitmap.on("click", function (evt) {
+			for (var i = 0; i < blocks100p.length; i++)
+				console.log(blocks100p[i].x + ":" + blocks100p[i].y);
+				});
+	}
+	
+	function handleResetButtonLoad(event) {
+	
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		var text = new createjs.Text("Start Over", "12px Arial", "#000000");
+        text.x = 520;
+        text.y = 450;
+        text.textBaseline = "alphabetic";
+        container.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 520;
+		bitmap.y = 415;
+		bitmap.on("click",function (evt) {
+			while (blocks1p.length > 0)
+				stage.removeChild(blocks1p.pop());
+			while (blocks10p.length > 0)
+				stage.removeChild(blocks10p.pop());
+			while (blocks10Hp.length > 0)
+				stage.removeChild(blocks10Hp.pop());
+			while (blocks100p.length > 0)
+				stage.removeChild(blocks100p.pop());
+			block1pCount = 0;
+			blocks10pCount = 0;
+			blocks10HpCount = 0;
+			blocks100pCount = 0;
+			currentPosCol = 55;
+			currentPosRow = 325;
+			currentPosCol10 = 55;
+			currentPosRow10 = 280;
+			currentPosColH10 = 100;
+			currentPosRowH10 = 325;
+			currentPosCol100 = 100;
+			currentPosRow100 = 280;
+		});
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+	}
+
+	
+	function deleteRod(bitmap) {
+		createjs.Tween.get(bitmap)
+		.to({alpha:0, visible:false}, 500);
+	}
+	function tick(event) {
+		// this set makes it so the stage only re-renders when an event handler indicates a change has happened.
+		if (update) {
+			update = false; // only update once
+			stage.update(event);		
+		}
+	}
+	
+	function getParameterByName(name, url) {
+		if (!url) url = window.location.href;
+		name = name.replace(/[\[\]]/g, "\\$&");
+		var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+			results = regex.exec(url);
+		if (!results) return null;
+		if (!results[2]) return '';
+		return decodeURIComponent(results[2].replace(/\+/g, " "));
+	}
+	function getOut() {
+	return;
+		var outtxt = "";
+		var cell = 0;
+		var dir = 0;
+		for (var i = 0; i < chips.length; i++) {
+			if (chips[i].alpha > 0) {
+				dir = (chips[i].rotated ? 1 : 0);
+				cell = chips[i].col + "," + chips[i].row + "," + (chips[i].units-1) + "," + dir;
+				outtxt += ":"+cell;
+			}
+		}
+		if (qn != null) {
+			parent.postMessage(qn+":"+outtxt,'*');
+			console.log(qn+":"+outtxt);
+		}	
+	}
+
+	function play_single_sound() {
+			document.getElementById('audiotag1').play();
+	}
+
+</script>
+</head>
+<body onload="init();">
+<div>
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
+  	<canvas id="testCanvas" width="640" height="480"></canvas>
+  </div>
+</div>
+
+</div>
+<audio id="audiotag1" src="../audio/boomboom.mp3" preload="auto"></audio>
+</body>
+</html>

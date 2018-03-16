@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Cuisenairre Rods Virtual Manipulative</title>
+
+	<script src="../lib/easeljs-NEXT.combined.js"></script>
+	<script type="text/javascript" src="../lib/tweenjs-NEXT.combined.js"></script>
+
+<script id="editable">
+	var canvas, stage, container;
+	var savedBounds;
+	var rod10, rod9, rod8, rod7, rod6, rod5, rod4, rod3, rod2, rod1;
+	var rods = [];
+	var inRods = [];
+	var rodCount = 0;
+	var currentRow = 2;
+	var currentCol = 2;
+	var downTime;
+	var firstClickTime;
+	var clickCount = 0;
+	var update = true;
+	var currentAlpha = 1;
+	var hideLabels = false;
+    
+	function init() {
+		qn = getParameterByName("qn");
+		initValue = getParameterByName("inVal");
+		if (initValue != null && initValue != "") {
+//			console.log(initValue);
+			inRods = initValue.split(':');
+		}
+		resize();
+		// create stage and point it to the canvas:
+		canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage(canvas);
+
+		// enable touch interactions if supported on the current device:
+		createjs.Touch.enable(stage);
+
+		// enabled mouse over / out events
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
+
+	    container = new createjs.Container();
+		stage.addChild(container);
+
+ 
+		createStage();
+		
+        stage.addChild(drawRectangularPrism(85,320,15,150,"ORANGE","#FFA500"));
+        stage.addChild(drawRectangularPrism(100,290,15,135,"BLUE","BLUE"));
+        stage.addChild(drawRectangularPrism(115,260,15,120,"BROWN","#D2691E"));
+        stage.addChild(drawRectangularPrism(130,230,15,105,"BLACK","BLACK"));
+        stage.addChild(drawRectangularPrism(145,200,15,90,"DARK GREEN","DARKGREEN"));
+        stage.addChild(drawRectangularPrism(160,170,15,75,"YELLOW","YELLOW"));
+        stage.addChild(drawRectangularPrism(175,140,15,60,"PURPLE","#FF00FF"));
+        stage.addChild(drawRectangularPrism(190,110,15,45,"GREEN","#14FF14"));
+        stage.addChild(drawRectangularPrism(205,80,15,30,"RED","RED"));
+        stage.addChild(drawRectangularPrism(220,50,15,15,"WHITE","WHITE"));
+
+        for (var i = 1; i < 11; i++) {
+        	window["rod" + i] = new Image();
+        	window["rod" + i].src = "../images/rod"+i+".png";
+        	window["rod" + i].onload = window["handleImageLoad"+i];
+        }
+		inRodA = getParameterByName("rodA");
+		if (inRodA != null && inRodA != "") {
+			rodA = inRodA
+			       	window["rodA"] = new Image();
+        	window["rodA"].src = "../images/rod"+inRodA+".png";
+        	window["rodA"].onload = window["handleRodALoad"];
+		}
+		inRodB = getParameterByName("rodB");
+		if (inRodB != null && inRodB != "") {
+			rodB = inRodB
+			window["rodB"] = new Image();
+        	window["rodB"].src = "../images/rod"+inRodB+".png";
+        	window["rodB"].onload = window["handleRodBLoad"];
+		}
+		createjs.Ticker.setFPS(20);
+		createjs.Ticker.addEventListener("tick", stage);
+	}
+	function resize() {
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+
+		// Our canvas must cover full height of screen
+		// regardless of the resolution
+		console.log("resizing");
+		var height = window.innerHeight*.95;
+		
+		// So we need to calculate the proper scaled width
+		// that should work well with every resolution
+		var ratio = canvas.width/canvas.height;
+		var width = height * ratio;
+		
+		canvas.style.width = width+'px';
+		canvas.style.height = height+'px';
+	}
+	function handleRodALoad(event) {
+		var bitmap = new createjs.Bitmap(event.target);
+		bitmap.x = 265;
+		bitmap.y = 10;
+		bitmap.index = -1;
+		bitmap.width = rodA*15;
+		stage.addChild(bitmap);
+	}	
+	function handleRodBLoad(event) {
+		var bitmap = new createjs.Bitmap(event.target);
+		bitmap.x = 265 + inRodA*15;
+		bitmap.y = 10;
+		bitmap.index = -1;
+		bitmap.width = rodB*15;
+		stage.addChild(bitmap);
+	}
+	function stop() {
+		createjs.Ticker.removeEventListener("tick", tick);
+	}
+	
+	function handleImageLoad10(event) { handleImageLoad(event.target,85,305,150,"O","WHITE");}
+	function handleImageLoad9(event) { handleImageLoad(event.target,100,275,135,"BL","WHITE");}
+	function handleImageLoad8(event) { handleImageLoad(event.target,115,245,120,"BR","WHITE");}
+	function handleImageLoad7(event) { handleImageLoad(event.target,130,215,105,"BK","WHITE");}
+	function handleImageLoad6(event) { handleImageLoad(event.target,145,185,90,"DG","WHITE");}
+	function handleImageLoad5(event) { handleImageLoad(event.target,160,155,75,"Y","BLACK");}
+	function handleImageLoad4(event) { handleImageLoad(event.target,175,125,60,"P","BLACK");}
+	function handleImageLoad3(event) { handleImageLoad(event.target,190,95,45,"GR","BLACK");}
+	function handleImageLoad2(event) { handleImageLoad(event.target,205,65,30,"R","WHITE");}
+	function handleImageLoad1(event) { handleImageLoad(event.target,220,35,15,"W","BLACK");}
+
+    function handleImageLoad(image,xloc,yloc,width,label,textColor) {
+    	var rodWidth = width/15;
+//    	console.log("Adding rods of width " + rodWidth);
+    	for (var i = 0; i < inRods.length; i++) {
+    		var nextItem = inRods[i];
+    		console.log(nextItem);
+			var details = nextItem.split(",");
+			console.log(details);
+			var length = parseInt(details[2])+1;
+			var row = parseInt(details[1]);
+			var col = parseInt(details[0]);
+			var dir = parseInt(details[3]);
+			console.log(length + "," + width);
+    		if (length*15 == width) {
+    			console.log("Adding rod");
+    			handleImageLoadDetails(image,235+col*15,-5+row*15,length*15,dir,label,textColor); 
+			}
+		}
+		handleImageLoadDetails(image,xloc,yloc,width,0,label,textColor);
+	}
+    function handleImageLoadDetails(image,xloc,yloc,width,dir,label,textColor) {
+//    	var image = rod150;
+    	var bitmap = new createjs.Container();
+		var bitmapImage = new createjs.Bitmap(image);
+		bitmap.addChild(bitmapImage);
+
+		var text = new createjs.Text(label, "bold 12px Arial", textColor);
+        text.x = 7;
+        text.y = 7;
+		text.regX = 5;
+		text.regY = -5;
+        text.textBaseline = "alphabetic";
+		text.visible = hideLabels ? false : true;
+		bitmap.addChild(text);
+		bitmap.label = text;
+		bitmap.x = xloc;
+		bitmap.y = yloc + bitmapImage.image.height;
+		if (xloc >= 250) {
+			bitmap.row = (yloc+5)/15;
+			bitmap.col = (xloc-235)/15;
+			console.log(bitmap.col + "," + bitmap.row);
+			bitmap.index = rodCount;
+			rodCount++;
+			rods.push(bitmap);		
+		} else
+			bitmap.index = -1;
+		bitmap.width = width;
+		rods.push(bitmap);
+		if (dir == 1) {
+			bitmap.rotated = true;
+			bitmap.y -= 15;
+			bitmap.rotation = 90;
+		} else
+			bitmap.rotated = false;
+		bitmap.units = width/15;
+		bitmap.regY = bitmapImage.image.height;
+		bitmap.name = "bmp_" + yloc;
+		bitmap.cursor = "pointer";
+		
+		bitmap.on("mousedown", function (evt) {
+			downTime = new Date().getTime();
+			bitmap.oldX = bitmap.x;
+			bitmap.oldY = bitmap.y;
+			this.parent.addChild(this);
+			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+		});
+
+		bitmap.on("click", function (evt) {
+			if (Math.abs(bitmap.oldX - bitmap.x) > 2 || Math.abs(bitmap.oldY - bitmap.y) > 2) {
+				clickCount = 0;
+				return;
+			}
+			if (bitmap.x > 250) {
+				var now = new Date().getTime();
+				var timesince = now - downTime;
+				if (timesince > 600) {
+//					console.log("to slow for click");
+					clickCount = 0;
+					return;
+				} else {
+					if (clickCount == 0)
+						firstClickTime = now;
+					clickCount++;
+					timesince = now;
+				}
+				if (clickCount == 2) {
+					clickCount = 0;
+					now = new Date().getTime();
+					timesince = now-firstClickTime;
+					if (timesince > 600) {
+//						console.log("to slow for double click");
+						return;
+					} 
+					if (bitmap.width == 15)
+						return;
+					if (bitmap.x >250) {
+						if (bitmap.rotated == true) {
+							bitmap.rotation = 0;
+							bitmap.rotated = false;
+							bitmap.row--;
+		//					bitmap.col--;
+							currentCol = bitmap.col + bitmap.width/15;
+							currentRow = bitmap.row;
+						} else {
+							bitmap.rotation = 90;
+							bitmap.rotated = true;
+		//					bitmap.row--;
+							bitmap.row++;
+							currentCol = bitmap.col+1;
+							currentRow = bitmap.row;
+						}
+					}				  
+				} 
+			} else {
+				bitmap.row = currentRow;
+				bitmap.col = currentCol;
+				var newX = 250+(currentCol-1)*15;
+				var newY = 10+(currentRow)*15;
+				currentCol = currentCol + bitmap.width/15;
+				if (newX + bitmap.width < 580) {
+					if (currentAlpha == .4) {
+						text.color = "#000000";
+						bitmapImage.alpha = currentAlpha;
+					}
+					createjs.Tween.get(bitmap, {loop: false}, null, false) 
+						.to({x: newX, y: newY}, 1000, createjs.Ease.get(1)) 
+					bitmap.index = rodCount;
+					rodCount++;
+					handleImageLoad(image,xloc,yloc,width,label,textColor);
+				}
+			}    			
+			getOut();	
+		});
+		bitmap.on("pressup", function (evt) {
+			update = true;
+			if (Math.abs(bitmap.oldX - bitmap.x) < 2 && Math.abs(bitmap.oldY - bitmap.y) < 2)
+				return;
+			var maxX = 580;
+			if (bitmap.rotated)
+				maxX = 820;
+			
+			if (bitmap.x < 250 || bitmap.x + bitmap.width > maxX || bitmap.y < 10 || bitmap.y > 340) {
+				if (bitmap.index != -1) {
+//					rods.splice(bitmap.index,1);
+					deleteRod(bitmap);
+				}
+				else {
+					createjs.Tween.get(bitmap, {loop: false}, null, false) // get a new tween targeting circle
+					.to({x: xloc, y: yloc+15}, 1000, createjs.Ease.get(1)) // tween x/y/alpha properties over 1s (1000ms) with ease out
+				}
+			} else {
+				var x = Math.round((bitmap.x - 250)/15)+1;
+				var y = Math.round((bitmap.y - 10)/15);
+				bitmap.col = x;
+				bitmap.row = y;
+				if (bitmap.rotated)
+					bitmap.row = y+1;
+//				console.log(x + "," + y);
+				bitmap.x = 250+(x-1)*15;
+				bitmap.y = 10+(y)*15;
+				if (bitmap.rotated){ 
+					currentCol = x+1;
+					currentRol = y+1;
+				}
+				else {
+					currentCol = x +  bitmap.width/15;
+					currentRow = y;
+				}
+				if (bitmap.index == -1) {
+					if (currentAlpha == .4) {
+						text.color = "#000000";
+						bitmapImage.alpha = currentAlpha;
+					}
+					bitmap.index = rodCount;
+					rodCount++;
+					handleImageLoad(image,xloc,yloc,width,label,textColor);
+				}
+			}
+			getOut();
+
+		});
+
+		bitmap.on("pressmove", function (evt) {
+			this.x = evt.stageX + this.offset.x;
+			this.y = evt.stageY + this.offset.y;
+			// indicate that the stage should be updated on the next tick:
+			update = true;
+		});
+		stage.addChild(bitmap);
+	}
+
+	function drawRectangularPrism(xloc,yloc,height,width,colorText,color) {
+		var container = new createjs.Container();
+		var shift = Math.floor(height/3);
+//				var s = new createjs.Shape();
+//		s.graphics.setStrokeStyle(16, "round", "round").beginStroke("#f90").moveTo(20, 10).lineTo(90, 90).lineTo(90, 140);
+//		container.addChild(s);
+		var bg = new createjs.Shape();
+		bg.graphics.mt(xloc,yloc);
+		bg.graphics.beginFill(color).lt(xloc,yloc-height);
+		bg.graphics.lt(xloc+shift,yloc-height-shift);
+		bg.graphics.lt(xloc+shift+width,yloc-height-shift);
+		bg.graphics.lt(xloc+shift+width,yloc-shift);
+		bg.graphics.lt(xloc+width,yloc);
+		bg.graphics.lt(xloc,yloc).endFill();
+		bg.graphics.setStrokeStyle(1).beginStroke("#000000");
+		bg.graphics.mt(xloc,yloc);
+		bg.graphics.lt(xloc,yloc-height).lt(xloc+width,yloc-height);
+		bg.graphics.lt(xloc+width,yloc).lt(xloc,yloc);
+		bg.graphics.mt(xloc,yloc-height).lt(xloc+shift,yloc-height-shift);
+		bg.graphics.lt(xloc+shift+width,yloc-height-shift);
+		bg.graphics.lt(xloc+shift+width,yloc-shift);
+		bg.graphics.lt(xloc+width,yloc);
+		bg.graphics.mt(xloc+width,yloc-height).lt(xloc+width+shift,yloc-height-shift);
+//		bg.graphics.beginFill(color).drawRect(xloc, yloc, width, height).endFill();
+		//bg.alpha = 0.25;
+		container.addChild(bg);
+		var text = new createjs.Text(colorText, "12px Arial","#000000");
+		text.textAlign="right";
+        text.x = xloc-10;
+        text.y = yloc-3;
+        text.textBaseline = "alphabetic";
+        container.addChild(text);
+		return container;
+	}
+
+	function createStage() {
+		var trashCanImage = new Image();
+		trashCanImage.src = "../images/TrashCan.JPG";
+		trashCanImage.onload=handleTrashCanLoad;
+		var resetImage = new Image();
+		resetImage.src = "../images/resetButton.png";
+		resetImage.onload = handleResetButtonLoad;
+		var graphics = new createjs.Graphics();
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").drawRect(5, 5, 580, 340);
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").drawRect(10, 10, 235, 330);
+		graphics.setStrokeStyle(1).beginStroke("#D3D3D3").beginFill("#FFF8DC").drawRect(250, 10, 330, 330);
+        graphics.alpha=0.25;
+        for (var i = 0; i < 21; i++)
+        	graphics.mt(250,25+i*15).lt(580,25+i*15);
+        for (var i = 0; i < 21; i++)
+        	graphics.mt(265+i*15,10).lt(265+i*15,340);
+        
+		var shape = new createjs.Shape(graphics);
+        container.addChild(shape);
+		createTransparentZoneHotSpot(260,310);
+		createHideLabelsHotSpotText(430,325,"Hide Labels");
+		createHideLabelsHotSpot(520,320);
+
+	}
+	function handleTrashCanLoad(event) {
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+
+		
+		
+		
+		bitmap.x = 50;
+		bitmap.y = 45;
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});	
+	}
+	function handleResetButtonLoad(event) {
+	
+		var image = event.target;
+		var bitmap = new createjs.Bitmap(image);
+		container.addChild(bitmap);
+		var text = new createjs.Text("Start Over", "12px Arial", "#000000");
+        text.x = 20;
+        text.y = 160;
+        text.textBaseline = "alphabetic";
+        container.addChild(text);
+		bitmap.regX = bitmap.image.width / 2 | 0;
+		bitmap.regY = bitmap.image.height / 2 | 0;
+		bitmap.scaleX = bitmap.scaleY = bitmap.scale = 1;
+		bitmap.name = "bmp_resetButton";
+		bitmap.cursor = "pointer";
+		this.scaleX = this.scaleY = this.scale;
+		bitmap.x = 50;
+		bitmap.y = 120
+		bitmap.on("click",function (evt) {
+			for (var count = 0; count < rods.length;) {
+				if (rods[count].index != -1) {
+					createjs.Tween.get(rods[count])
+					.to({alpha:0, visible:false}, 500)
+					.call(handleTweenComplete, rods[count]);
+					rods.splice(count,1);
+					rodCount--;
+				} else {
+					count++;
+				}
+			}
+			currentRow = 2;
+			currentCol = 2;
+			getOut();
+
+		 });
+		bitmap.on("rollover", function (evt) {
+			this.scaleX = this.scaleY = this.scale * 1.2;
+			update = true;
+		});
+
+		bitmap.on("rollout", function (evt) {
+			this.scaleX = this.scaleY = this.scale;
+			update = true;
+		});
+	}
+	function deleteRod(bitmap) {
+		var count = 0;
+		while (count < rods.length) {
+			if (rods[count] == bitmap) {
+				console.log("rod round");
+				createjs.Tween.get(bitmap)
+				.to({alpha:0, visible:false}, 500)
+				.call(handleTweenComplete, rods[count]);
+				rods.splice(count,1);
+				break;
+			}
+			count++;
+		}
+	}
+	
+	function handleTweenComplete(bitmap) {
+		console.log("Removing bitmap");
+		if (bitmap != null)
+			stage.removeChild(bitmap);
+	}
+	function tick(event) {
+		// this set makes it so the stage only re-renders when an event handler indicates a change has happened.
+		if (update) {
+			update = false; // only update once
+			stage.update(event);		}
+	}
+	
+	function createTransparentZoneHotSpot(xloc,yloc) {
+		var dzContainer = new createjs.Container();
+		dzContainer.x = xloc;
+		dzContainer.y = yloc;
+		var dzText = new createjs.Text("Add Transparent Pieces.","12px Arial", "#000000");
+		dzTextBaseline = "alphabetic";
+		dzText.y = 4;
+		dzContainer.addChild(dzText); 
+		var hs = new createjs.Shape();
+		var radius = 10;
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(140, 10, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.selected = false;
+		hs.alpha = .2;
+		hs.on("click", function (evt) {
+			if (currentAlpha == .4)  {
+				hs.alpha = .2;
+				currentAlpha = 1;
+			} else { 
+				currentAlpha = .4;
+				hs.alpha = 1;
+			}
+		});		
+		dzContainer.addChild(hs);
+		stage.addChild(dzContainer);
+	}
+	function createHideLabelsHotSpotText(xloc,yloc,label) {
+		var hsText = new createjs.Text("Hide Labels", "12px Arial", "#000000");
+        hsText.x = xloc;
+        hsText.y = yloc;
+        hsText.textBaseline = "alphabetic";
+        stage.addChild(hsText);
+    }
+	
+	function createHideLabelsHotSpot(xloc,yloc) {
+		var hs = new createjs.Shape();
+		var radius = 10;
+		hs.graphics.beginFill("#0000FF").setStrokeStyle(2);
+		hs.graphics.drawCircle(xloc-radius+10, yloc-radius+10, 10).endFill();	
+		hs.regX = 1.5;
+		hs.regY = -1.5;
+		hs.selected = false;
+		hs.alpha = .2;
+		hs.on("click", function (evt) {
+			if (this.alpha == .2) {
+				for (var i = 0; i < rods.length;i++) 
+					rods[i].label.visible = false;
+				this.alpha = 1;
+				hideLabels = true;
+			} else {
+				for (var i = 0; i < rods.length;i++) 
+					rods[i].label.visible = true;
+				this.alpha = .2;
+				hideLabels = false;
+			}				
+		});		
+		stage.addChild(hs);
+	}
+	
+	function getParameterByName(name, url) {
+		if (!url) url = window.location.href;
+		name = name.replace(/[\[\]]/g, "\\$&");
+		var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+			results = regex.exec(url);
+		if (!results) return null;
+		if (!results[2]) return '';
+		return decodeURIComponent(results[2].replace(/\+/g, " "));
+	}
+	function getOut() {
+		var outtxt = "";
+		var cell = 0;
+		var dir = 0;
+		for (var i = 0; i < rods.length; i++) {
+			dir = (rods[i].rotated ? 1 : 0);
+			cell = rods[i].col + "," + rods[i].row + "," + (rods[i].units-1) + "," + dir;
+			outtxt += ":"+cell;
+		}
+		if (qn != null) {
+			parent.postMessage(qn+":"+outtxt,'*');
+			console.log(qn+":"+outtxt);
+		}	
+	}
+
+</script>
+</head>
+<body onload="init();">
+<div>
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
+  	<canvas id="testCanvas" width="600" height="350"></canvas>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
