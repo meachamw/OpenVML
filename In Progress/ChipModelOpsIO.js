@@ -33,25 +33,27 @@
 	var feedback = "Whoot Whoot";
 	var savePoint = 0;
 
-	function init() {
-		if (getParameterByName("state") != null) {
+	function initVM() {
+		console.log(getParameterByName("state");
+		if (getParameterByName("state") != "undefined") {
+			console.log("got shit");
 			var inParams = JSON.parse(atob(getParameterByName("state")));
 			//var inParams = { state: JSON.parse(atob("eyJjaGlwcGllcyI6W3sieCI6MTgwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6OTAsInkiOjI5NSwiYWxwaGEiOjEsInZhbCI6LTF9LHsieCI6MjI1LCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MjcwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MTM1LCJ5IjoyOTUsImFscGhhIjoxLCJ2YWwiOi0xfV0sImNoaXBDb3VudCI6NSwiY3VycmVudFBvc0NvbCI6MzE1LCJjdXJyZW50TmVnQ29sIjoxODAsImN1cnJlbnRQb3NSb3ciOjIwNSwiY3VycmVudE5lZ1JvdyI6Mjk1fQ=="))};
 			console.log(inParams);
-			if (typeof inParams.state != "undefined" && inParams.state != "")  {
-				savedChips = inParams.state.chippies;
-				chipCount = inParams.state.chipCount;
-				currentPosCol = inParams.state.currentPosCol;
-				currentNegCol = inParams.state.currentNegCol;
-				currentPosRow = inParams.state.currentPosRow;
-				currentNegRow = inParams.state.currentPosCol;
-				score = inParams.state.score;
+			if (typeof inParams != "undefined" && inParams != "")  {
+				console.log("Got Chippies");
+				savedChips = inParams.chippies;
+				chipCount = inParams.chipCount;
+				currentPosCol = inParams.currentPosCol;
+				currentNegCol = inParams.currentNegCol;
+				currentPosRow = inParams.currentPosRow;
+				currentNegRow = inParams.currentPosCol;
+				score = inParams.score;
 			}
 			if (inParams.num1 != "") {
 				num1 = inParams.num1;
 				num2 = inParams.num2;
 				op = inParams.op;
-				console.log(num1 +"::"+num2+"::"+op);
 			}
 			if (typeof inParams.qn != "undefined") {
 				qn = inParams.qn;
@@ -93,27 +95,25 @@
         stage.addChild(drawChip(250,90,"RED",-1));
         stage.addChild(drawChip(200,90,"YELLOW",1));
         drawZero();
-												   
 													 
-
-		if (qn != null) {
+		if (qn = getParameterByName("qn") != null) {
+			console.log("Got qn");
 			for (var i = 0; i < savedChips.length; i++) {
 				stage.addChild(drawSavedChip(savedChips[i]));
 			}
 		}
 		createjs.Ticker.setFPS(20);
 		createjs.Ticker.addEventListener("tick", tick);
-				
+		update = true;	
 	}
-
+	
 	function tick(event) {
-		console.log("tick");
 		if (update || tweensOnTheRun || blowingThemUp) {
-			console.log("tock");
 			update = false; 
 			stage.update(event);		
 		}
-	}					   
+	}
+	
 	function resize() {
 			var canvas = document.querySelector('canvas');
 			var ctx = canvas.getContext('2d');
@@ -518,7 +518,7 @@
 				.call(handleTweenComplete);
 	}
 	function blowEmUp() {
-
+		blowingThemUp = true;
 		for (var i = 0; i < chipCount;) {
 			if (chips[i].alpha == .25) {
 				var blammoClone = blammo.clone();
@@ -529,17 +529,18 @@
 				var deadChip = chips[i];
 				chipCount--;
 				chips.splice(i, 1);
+				tweensOnTheRun++;
 				createjs.Tween.get(deadChip)
-					.to({alpha:0, visible:false}, 500);
-//				stage.removeChild(deadChip);
+					.to({alpha:0, visible:false}, 500)
+					.call(handleTweenComplete);
 			} else
 			  i++;
 		}
-//		play_single_sound();
 		setTimeout(clearBlammos, 3000);
 	}
 
 	function blowUpStacked() {
+		blowingThemUp = true;
 		for (var i = 0; i < chipCount;) {
 			if (chips[i].greenMile == true) {
 				var blammoClone = blammo.clone();
@@ -550,14 +551,13 @@
 				var deadChip = chips[i];
 				chipCount--;
 				chips.splice(i, 1);
+				tweensOnTheRun++;
 				createjs.Tween.get(deadChip)
 					.to({alpha:0, visible:false}, 500)
-					.handlecomplete;
-//				stage.removeChild(deadChip);
+					.call(handleTweenComplete);
 			} else
 			  i++;
 		}
-//		play_single_sound();
 		setTimeout(clearBlammos, 3000);
 	}
 
@@ -565,6 +565,7 @@
 		while (blammos.length > 0) {
 			stage.removeChild(blammos.pop());
 		}
+		blowingThemUp = false;
 	}
 
 	function hitTest(chip1,chip2) {
@@ -791,13 +792,6 @@
 		stage.removeChild(chip);
 		getOut();
 	}
-	function tick(event) {
-		// this set makes it so the stage only re-renders when an event handler indicates a change has happened.
-		if (update) {
-			update = false; // only update once
-			stage.update(event);
-		}
-	}
 
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -813,7 +807,7 @@ function getOut() {
 	if (qn != null) {
 //		var outText = "VM::"+qn+"::"+btoa(JSON.stringify(saveState()));
 //		console.log(score + "::" + savePoint);
-		parent.postMessage("VM::"+qn+"::"+btoa(JSON.stringify(saveState())),'*');
+		parent.postMessage(qn+"::"+btoa(JSON.stringify(saveState())),'*');
 	}
 }
 
@@ -828,6 +822,7 @@ function saveState() {
 		saveChip.y = chips[i].y;
 		saveChip.alpha = chips[i].alpha;
 		saveChip.val = chips[i].val;
+//		saveChip.greenMile = chips[i].greenMile;
 		chippies[i] = saveChip;
 		if (chips[i].val == 1)
 			posChips++;
