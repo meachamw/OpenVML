@@ -40,6 +40,7 @@
 		if (!(qn == null || qn == "" || state == null || state == "" || state == "undefined")) {
 			try {
 				console.log(getParameterByName("state"));
+				
 				var inParams = JSON.parse(atob(getParameterByName("state")));
 				//var inParams = { state: JSON.parse(atob("eyJjaGlwcGllcyI6W3sieCI6MTgwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6OTAsInkiOjI5NSwiYWxwaGEiOjEsInZhbCI6LTF9LHsieCI6MjI1LCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MjcwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MTM1LCJ5IjoyOTUsImFscGhhIjoxLCJ2YWwiOi0xfV0sImNoaXBDb3VudCI6NSwiY3VycmVudFBvc0NvbCI6MzE1LCJjdXJyZW50TmVnQ29sIjoxODAsImN1cnJlbnRQb3NSb3ciOjIwNSwiY3VycmVudE5lZ1JvdyI6Mjk1fQ=="))};
 				savedChips = inParams.chippies;
@@ -636,6 +637,7 @@
 		bitmap.x = 510;
 		bitmap.y = 50;
 		this.scaleX = this.scaleY = this.scale;
+		update = true;
 		bitmap.on("rollover", function (evt) {
 			this.scaleX = this.scaleY = this.scale * 1.2;
 			update = true;
@@ -661,6 +663,7 @@
 		this.scaleX = this.scaleY = this.scale;
 		bitmap.x = 45;
 		bitmap.y = 50
+		update = true;
 		bitmap.on("rollover", function (evt) {
 			this.scaleX = this.scaleY = this.scale * 1.2;
 			update = true;
@@ -720,6 +723,7 @@
 		this.scaleX = this.scaleY = this.scale;
 		bitmap.x = 120;
 		bitmap.y = 50
+		update = true;
 		bitmap.on("click",function (evt) {
 			currentPosCol = 45;
 			currentPosRow = 160
