@@ -7,10 +7,8 @@
 <script type="text/javascript">
 //these two lines are the ones to customize
 //contains defines the drop containers.  These can be styled by CSS with class .containers
-var containers = {"cont0":{left:200,top:10,width:200,height:270},
-                  "cont1":{left:200,top:290,width:200,height:270},
-                  "cont2":{left:410,top:10,width:200,height:270},
-				  "cont3":{left:410,top:290,width:200,height:270},};
+var containers = [];
+
 //dragobjects defines the objects to drag, and their default position
 //if clone is true, then dropping the object in the container will drop a clone
 //  and return the original to the default position
@@ -39,9 +37,19 @@ $(function() {
 	}
 
 	var cats = getParameterByName("cats").split(';;');
-	var i = 0;
+	
+	switch (cats.length) {
+		case 2 : containers = {	"cont0":{left:200,top:10,width:200,height:270},
+								"cont1":{left:410,top:10,width:200,height:270}}; break;
+		case 3 : containers = {	"cont0":{left:200,top:10,width:200,height:270},
+								"cont1":{left:200,top:290,width:200,height:270},
+								"cont2":{left:410,top:10,width:200,height:270}}; break;
+		case 3 : containers = {	"cont0":{left:200,top:10,width:200,height:270},
+								"cont1":{left:200,top:290,width:200,height:270},
+								"cont2":{left:410,top:10,width:200,height:270},
+								"cont3":{left:410,top:290,width:200,height:270}};
+	}
 	for (var c in containers) {
-//	for (var c = 0; c < cats.length; c++) {
 		$('<div id="'+c+'"></div>').addClass("container")
 		 .css("left",containers[c].left)
 		 .css("top",containers[c].top)
@@ -49,12 +57,8 @@ $(function() {
 		 .css("height",containers[c].height)
 		 .appendTo('#wrapper');
 		 console.log(i + ":" + cats.length);
-		i++;
-		if (i == cats.length)
-			break;
 	}
 	
-	var cats = getParameterByName("cats").split(';;');
 	for (var i=0;i<cats.length;i++) {
 		$("#cont"+i).html(cats[i]);
 	}
@@ -153,6 +157,7 @@ function getout() {
 			contout += ";";
 		}
 		contout += c+":"+cont[c].join(",");
+		n++;
 	}
 	var outtxt = baseout.join(";")+"|"+objout.join(";")+"|"+contout; 
 	if (qn != "") {
