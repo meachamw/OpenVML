@@ -453,7 +453,7 @@
 		dragger.y = yLoc;
 		dragger.regX = bg.twidth/2;
 		dragger.regY = bg.theight/2; 
-
+		dragger.bg = bg;
 		dragger.index = -1;
 		dragger.addChild(bg,rH);
 		for (var i = 0; i < dragger.pointCount; i++) 
@@ -471,6 +471,7 @@
 			dragger.oldY = dragger.y;
 			this.parent.addChild(this);
 			this.offset = {x: this.x - evt.stageX, y: this.y - evt.stageY};
+			startMoveSelected(evt);
 			update = true;
 		});
 		dragger.on("rollout", function (evt) {
@@ -480,8 +481,12 @@
 		});	
 		dragger.on("pressmove", function (evt) {
 			if (!rH.rotate) {
-				this.x = evt.stageX + this.offset.x;
-				this.y = evt.stageY + this.offset.y;
+				if (this.selected) {
+					moveSelected(evt);
+				} else {
+					this.x = evt.stageX + this.offset.x;
+					this.y = evt.stageY + this.offset.y;
+				}
 			} else {
 				var rx = evt.stageX - dragger.oldX;
 				var ry = evt.stageY - dragger.oldY;
@@ -532,41 +537,46 @@
 			update = true;
 			if (Math.abs(dragger.oldX - dragger.x) <= 2 && Math.abs(dragger.oldY - dragger.y) <= 2)
 				return;
-			if (!onStage(bg.twidth,bg.theight,dragger.x,dragger.y)) {
-				if (dragger.active) {
-					tileCount--;
-					for (var i = 0; i < tiles.length; i++) {
-						if (dragger.iD == tiles[i].iD) {
-							tiles.splice(i,1);
-							break;
-						}
-					}
-					tweensOnTheRun++;
-					createjs.Tween.get(dragger)
-					.to({alpha:0, visible:false}, 500)
-					.call(function() {
-						tweensOnTheRun--;
-						stage.removeChild(dragger);
-					});
-				} else {
-					tweensOnTheRun++;
-					createjs.Tween.get(dragger, {loop: false}, null, false) 
-					.to({x: xLoc, y: yLoc}, 1000, createjs.Ease.get(1)) 
-					.call(function() {
-						tweensOnTheRun--;
-					});
-				}
+			if (this.selected) {
+					console.log("Deleting Selected");
+					endMoveSelected(evt);
 			} else {
-				if (dragger.active == false) {
-					dragger.alpha = currentAlpha;
-					dragger.iD = nextTileId;
-					nextTileId++;
-					dragger.active = true;
-					tileCount++;
-					tiles.push(dragger);
-					createTile(xLoc,yLoc,tileType);
+				if (!onStage(bg.twidth,bg.theight,dragger.x,dragger.y)) {
+					if (dragger.active) {
+						tileCount--;
+						for (var i = 0; i < tiles.length; i++) {
+							if (dragger.iD == tiles[i].iD) {
+								tiles.splice(i,1);
+								break;
+							}
+						}
+						tweensOnTheRun++;
+						createjs.Tween.get(dragger)
+						.to({alpha:0, visible:false}, 500)
+						.call(function() {
+							tweensOnTheRun--;
+							stage.removeChild(dragger);
+						});
+					} else {
+						tweensOnTheRun++;
+						createjs.Tween.get(dragger, {loop: false}, null, false) 
+						.to({x: xLoc, y: yLoc}, 1000, createjs.Ease.get(1)) 
+						.call(function() {
+							tweensOnTheRun--;
+						});
+					}
+				} else {
+					if (dragger.active == false) {
+						dragger.alpha = currentAlpha;
+						dragger.iD = nextTileId;
+						nextTileId++;
+						dragger.active = true;
+						tileCount++;
+						tiles.push(dragger);
+						createTile(xLoc,yLoc,tileType);
+					}
+					checkSnap(dragger);
 				}
-				checkSnap(dragger);
 			}
 			update = true;
 //			getOut();
@@ -610,14 +620,52 @@
 							shapeFunction(bg,bg.color,3);
 							dragger.selected = true;
 						}
+						update = true;
 						clearTimeout(timeout);	
-					}, 300);
+					}, 200);
 				}
 			}
 			lastTap = currentTime;
 			update = true;
 		});
 		return dragger;
+	}
+
+	function startMoveSelected(evt) {
+		for (var i = 0; i < tileCount; i++) {
+			if (tiles[i].selected) {
+				tiles[i].offset = {x: tiles[i].x - evt.stageX, y: tiles[i].y - evt.stageY};
+			}
+		}
+	}
+	function moveSelected(evt) {
+		for (var i = 0; i < tileCount; i++) {
+			if (tiles[i].selected) {
+				tiles[i].x = evt.stageX + tiles[i].offset.x;
+				tiles[i].y = evt.stageY + tiles[i].offset.y;
+			}
+		}
+	}
+	
+	function endMoveSelected(evt) {
+		for (var i = 0; i < tiles.length; i++) {
+			if (tiles[i].selected) {
+				if (!onStage(tiles[i].bg.twidth,tiles[i].bg.theight,tiles[i].x,tiles[i].y)) {
+					tileCount--;
+					var deadTile = tiles[i];
+					tiles.splice(i,1);
+					tweensOnTheRun++;
+					createjs.Tween.get(deadTile)
+					.to({alpha:0, visible:false}, 500)
+					.call(function() {
+						tweensOnTheRun--;
+						stage.removeChild(deadTile);
+						update = true;
+					});
+					i--;
+				}
+			}
+		}
 	}
 	
 	function checkSnap(dragger) {
