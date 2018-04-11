@@ -8,4 +8,8 @@ Index of Virtual Manipulatives
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/ChipModelOps.html">Integer Chips</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/ChipModelOpsIO.html">Integer Chips IO</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/SievesState.html">Sieve IO</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/PatternBlocksB.html">Pattern Blocks</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/FractionCirclesTrig.html">Fraction Circles</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/CuisinartRodsVert.html">Vertical Cuisinart Rods</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/SievesState.html">SievesState</a></li>
   </ol>
