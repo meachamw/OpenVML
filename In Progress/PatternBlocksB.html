@@ -778,7 +778,7 @@
 			update = true;
 		});
 		bitmap.on("click", function (evt) {
-			for (var i = 0; i < tiles.length;) {
+/*			for (var i = 0; i < tiles.length;) {
 				if (tiles[i].selected) {
 					var deadTile = tiles[i];
 					tileCount--;
@@ -789,7 +789,8 @@
 				}
 			}
 			update = true;
-			setTimeout(clearBlammos, 3000);
+			tweensOnTheRun++;
+			setTimeout(clearBlammos, 3000);*/
 		});
 	}
 	
@@ -797,6 +798,7 @@
 		while (blammos.length > 0) {
 			stage.removeChild(blammos.pop());
 		}
+		tweensOnTheRun--;
 		update = true;
 	}
 	
@@ -829,6 +831,7 @@
 				}
 			}
 			update = true;
+			tweensOnTheRun++;
 			setTimeout(clearBlammos, 3000);
 		});
 		bitmap.on("rollover", function (evt) {
