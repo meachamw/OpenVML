@@ -201,7 +201,7 @@
 				clickCount = 0;
 				return;
 			}
-			if (bitmap.x > 250) {
+			if (bitmap.x >= 250) {
 				var now = new Date().getTime();
 				var timesince = now - downTime;
 				if (timesince > 600) {
@@ -224,15 +224,15 @@
 					} 
 					if (bitmap.width == 15)
 						return;
-					if (bitmap.x >250) {
-						if (bitmap.rotated == true) {
+					if (bitmap.x >=250) {
+						if (bitmap.rotated == true && bitmap.x + bitmap.width <= 580 && bitmap.y > 15) {
 							bitmap.rotation = 0;
 							bitmap.rotated = false;
 							bitmap.row--;
 		//					bitmap.col--;
 							currentCol = bitmap.col + bitmap.width/15;
 							currentRow = bitmap.row;
-						} else {
+						} else if (bitmap.y + bitmap.width < 355) {
 							bitmap.rotation = 90;
 							bitmap.rotated = true;
 		//					bitmap.row--;
@@ -266,11 +266,18 @@
 			update = true;
 			if (Math.abs(bitmap.oldX - bitmap.x) < 2 && Math.abs(bitmap.oldY - bitmap.y) < 2)
 				return;
-			var maxX = 580;
-			if (bitmap.rotated)
-				maxX = 820;
+			var width = bitmap.width;
+			var height = 15;
+			if (bitmap.rotated) {
+				width = 15;
+				height = bitmap.width;
+			}
+			var x = Math.round((bitmap.x - 250)/15)+1;
+			var y = Math.round((bitmap.y - 10)/15);
+			bitmap.x = 250+(x-1)*15;
+			bitmap.y = 10+(y)*15;
 			
-			if (bitmap.x < 250 || bitmap.x + bitmap.width > maxX || bitmap.y < 10 || bitmap.y > 340) {
+			if (bitmap.x < 250 || bitmap.x + width > 580 || bitmap.y < 10 || bitmap.y + height > 355) {
 				if (bitmap.index != -1) {
 //					rods.splice(bitmap.index,1);
 					deleteRod(bitmap);
@@ -280,16 +287,10 @@
 					.to({x: xloc, y: yloc+15}, 1000, createjs.Ease.get(1)) // tween x/y/alpha properties over 1s (1000ms) with ease out
 				}
 			} else {
-				var x = Math.round((bitmap.x - 250)/15)+1;
-				var y = Math.round((bitmap.y - 10)/15);
 				bitmap.col = x;
 				bitmap.row = y;
-				if (bitmap.rotated)
+				if (bitmap.rotated) {
 					bitmap.row = y+1;
-//				console.log(x + "," + y);
-				bitmap.x = 250+(x-1)*15;
-				bitmap.y = 10+(y)*15;
-				if (bitmap.rotated){ 
 					currentCol = x+1;
 					currentRol = y+1;
 				}
