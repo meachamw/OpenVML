@@ -12,22 +12,20 @@
 	var tileCount = 0;
 	var multiples = [];
 	var activeCount = 0;
-
-
+	var score = 0;
+	var feedback = "Whoot Whoot";
+	var statePassedIn = false;
     
 	function initVM() {
-		var dataPassedIn = false;
 		qn = getParameterByName("qn");
 		var state = getParameterByName("state");
 		if (!(qn == null || qn == "" || state == null || state == "" || state == "undefined")) {
 			try {
 				var inParams = JSON.parse(atob(getParameterByName("state")));
 				//var inParams = { state: JSON.parse(atob("eyJjaGlwcGllcyI6W3sieCI6MTgwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6OTAsInkiOjI5NSwiYWxwaGEiOjEsInZhbCI6LTF9LHsieCI6MjI1LCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MjcwLCJ5IjoyMDUsImFscGhhIjoxLCJ2YWwiOjF9LHsieCI6MTM1LCJ5IjoyOTUsImFscGhhIjoxLCJ2YWwiOi0xfV0sImNoaXBDb3VudCI6NSwiY3VycmVudFBvc0NvbCI6MzE1LCJjdXJyZW50TmVnQ29sIjoxODAsImN1cnJlbnRQb3NSb3ciOjIwNSwiY3VycmVudE5lZ1JvdyI6Mjk1fQ=="))};
-				savedTiles = inParams.tiles;
-				savedMultiples = inParams.multiples
-				activeCount = inParams.activeCount;			
+				multiples = inParams.multiples;
 				score = inParams.score;
-				chipsPassedIn = true;
+				statePassedIn = true;
 			}
 			catch (e) {
 				console.log("Invalid state passed in." + getParameterByName("state"));
@@ -44,20 +42,16 @@
 		// enabled mouse over / out events
 		stage.enableMouseOver(10);
 		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves the canvas
-		if (dataPassedIn) {
-			for (var i = 0;
-			i < savedTiles.length; i++) {
-				stage.addChild(drawSavedTile(savedTile[i]));
-			}
-			for (var i = 0; i < savedMultiples.length; i++) {
-				stage.addChild(drawSavedMultiple(savedMultiples[i]));
-			}
-		}
 
  		addStageElements();
+		if (statePassedIn) {
+			drawTileColors();
+			update = true;
+		}
 		createjs.Ticker.setFPS(50);
 		createjs.Ticker.addEventListener("tick", tick);
 		update = true;
+		getOut();
 	}
 
 	function tick(event) {
@@ -82,16 +76,27 @@
 			if (tileXloc == 40)
 				tileYloc -= 40;
 		}
+		//beanBags[0] = createBeanBag(295,900,"#FF0000",2,"Red");
 		beanBags[0] = createBeanBag(295,900,"#FF0000",2,"Red");
-		beanBags[1] = createBeanBag(295,900,"#FF0000",2,"Red");
-		beanBags[2] = createBeanBag(295,860,"#00FF00",3,"Green");
-		beanBags[3] = createBeanBag(295,820,"#0000FF",4,"Blue");
-		beanBags[4] = createBeanBag(295,780,"#8800FF",5,"Purple");
-		beanBags[5] = createBeanBag(295,740,"#444444",6,"Brown");
-		beanBags[6] = createBeanBag(295,700,"#FF8800",7,"Orange");
-		beanBags[7] = createBeanBag(295,660,"#FFFF00",8,"Yellow");
-		beanBags[8] = createBeanBag(295,620,"#AAAAAA",9,"Grey");
-		for (var i = 0; i < 9; i++)
+		beanBags[1] = createBeanBag(295,860,"#00FF00",3,"Green");
+		beanBags[2] = createBeanBag(295,820,"#0000FF",4,"Blue");
+		beanBags[3] = createBeanBag(295,780,"#8800FF",5,"Purple");
+		beanBags[4] = createBeanBag(295,740,"#444444",6,"Brown");
+		beanBags[5] = createBeanBag(295,700,"#FF8800",7,"Orange");
+		beanBags[6] = createBeanBag(295,660,"#FFFF00",8,"Yellow");
+		beanBags[7] = createBeanBag(295,620,"#AAAAAA",9,"Grey");
+		if (statePassedIn) {
+			console.log("Processing Bean Bags");
+			for (var i = 0; i < multiples.length; i++) {
+					console.log(multiples[i].val-2);
+					var index = multiples[i].val-2;
+					beanBags[index].mult = multiples[i];
+					beanBags[index].val = multiples[i].val;
+					beanBags[index].text.text = "toss";
+					beanBags[index].set = true;
+			}
+		}
+		for (var i = 0; i < 8; i++)
 			stage.addChild(beanBags[i]);
 	}
 	function resetAll() {
@@ -105,6 +110,7 @@
 		addStageElements();
 		stage.update();
 		update = true;
+		getOut();
 	}
 
 	function stop() {
@@ -135,6 +141,7 @@
         text.y = 25;
         text.textBaseline = "alphabetic";
 //        text.visible = false;
+		c.text = text;
         c.addChild(text);
 		c.x = xloc;
 		c.y = yloc;
@@ -146,6 +153,8 @@
 		c.regX = 15;
 		c.regY = 15; 
 		c.set = false;
+		c.color = color;
+		
 
 		if (yloc >= 100) {
 //			c.index = tileCount;
@@ -199,7 +208,6 @@
 			c.col = c.x/40-1;
 			c.row = 24 - c.y/40;
 			c.val = c.row*6+c.col+2;
-			console.log(c.x + ":"+c.y + ":" +c.col + ":" + c.row + ":" +c.val);
 			if (c.col < 0 || c.col  > 5 || c.row < 0 || c.row > 11 ||
 				c.set == true) {
 				activeCount++;
@@ -210,21 +218,21 @@
 				//instantiate object using the constructor function
 				var mult = new Multiple(color);
 				mult.val = c.val;
+				console.log(mult.val)
 				mult.count = 1;
-				console.log(mult.getInfo());
-				multiples.push(mult);
+				multiples[multiples.length] = mult;
+				c.multLoc = multiples.length - 1;
 				drawTileColors();	
 				c.set = true;
 				c.cursor = "pointer";
 				c.mult = mult;
-				console.log(c.mult.val);
 				c.getChildAt(1).text = "Toss";
 				c.x = xloc;
 				c.y = yloc;
 			}
 			update = true;
 			return;
-//			getOut();
+			getOut();
 
 		});
 		c.on("pressmove", function (evt) {
@@ -239,6 +247,7 @@
 	
 	function handleTweenComplete() {
 		activeCount--;
+		getOut();
 	}
 
 	function tossBag(startX,startY,endX,endY,color,parent) {
@@ -289,12 +298,10 @@
 		c.regX = 15;
 		c.regY = 15; 
 		c.on("rollover", function (evt) {
-				console.log("mouse over");
 				bg.alpha = 1;
 				update = true;
 		});
 		c.on("rollout", function (evt) {
-				console.log("mouse out");
 				bg.alpha = .5;
 				update = true;
 		});
@@ -348,6 +355,7 @@
 			tile.alpha = .7;
 		}
 		update = true;
+		getOut();
 	}
 	
 	function drawTile(tile) {
@@ -381,7 +389,6 @@
 		tile.name = "tile";
 		tC.tile = tile;
 		tC.addChild(tile);
-//		console.log(tC.tile.name);
 		var text = new createjs.Text(value, "bold 20px Arial", "#000000");
 		text.textAlign="center";
 		text.mouseEnabled = false;
@@ -446,51 +453,6 @@
 			update = true;
 		});
 	}
-	function saveState() {
-		var reportscore = 0;
-
-		// 8 colors.  1 bit per color
-		// 8 tiles.  Each tile has a stats.  Drop or toss
-		var tiles = [];
-		for (var i = 0; i < tiles.length; i++) {
-			var saveTile = new Object();
-			saveTile.x = tiles[i].x;
-			saveTile.y = tiles[i].y;
-			saveChip.alpha = chips[i].alpha;
-			saveChip.val = chips[i].val;
-	//		saveChip.greenMile = chips[i].greenMile;
-			chippies[i] = saveChip;
-			if (chips[i].val == 1)
-				posChips++;
-			else	
-				negChips++;
-		}
-		if (posChips == 4 && negChips == 2) 
-			score = 1;
-		else 
-			score = 0;
-		if (score == 1 && savePoint == 0) {
-			reportscore = 1;
-			savePoint = 1;
-			console.log("Writing Save Point");
-		}
-		if (score == 0 && savePoint == 1) {
-			reportscore = 0;
-			savePoint = 0;
-		}
-		var state = {
-			chippies : chippies,
-			chipCount: chipCount,
-			currentPosCol: currentPosCol,
-			currentNegCol: currentNegCol,
-			currentPosRow: currentPosRow,
-			currentNegRow: currentNegRow,
-			score: score,
-			feedback: feedback,
-			reportscore: reportscore
-		};
-		return state;
-	}	
 	
 	function getParameterByName(name, url) {
 		if (!url) url = window.location.href;
@@ -501,16 +463,22 @@
 		if (!results[2]) return '';
 		return decodeURIComponent(results[2].replace(/\+/g, " "));
 	}
-
 	function getOut() {
-		return;
-		var outtxt = num100*100+num10*10+num1; 
 		if (qn != null) {
-			parent.postMessage(qn+"::"+outtxt,'*');
-	//		alert(qn+"::"+outtxt);
-		}	
+			console.log(qn+"::"+score+","+feedback+","+btoa(JSON.stringify(saveState())),'*');
+			parent.postMessage(qn+"::"+score+","+feedback+","+btoa(JSON.stringify(saveState())),'*');
+		}
 	}
-
+	function saveState() {
+		var reportscore = 0;
+		var state = {
+			multiples : multiples,
+			score: score,
+			feedback: feedback,
+			reportscore: reportscore
+		};
+		return state;
+	}
 	function resize() {
 		var canvas = document.querySelector('canvas');
 		var ctx = canvas.getContext('2d');
