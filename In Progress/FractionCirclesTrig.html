@@ -270,7 +270,7 @@
 					console.log("new rotation " + newRotation);
 					evt.currentTarget.rotation = newRotation;
 					evt.currentTarget.label.rotation = -newRotation;
-					nextRotation[rotationIndex] = (evt.currentTarget.rotation + 360/angle)%360;
+					nextRotation[rotationIndex] = (evt.currentTarget.rotation - 360/angle)%360;
 						
 				}
 				update = true;
