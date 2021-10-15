@@ -35,7 +35,7 @@
 		stage = new createjs.Stage(canvas);
 
 		// enable touch interactions if supported on the current device:
-		createjs.Touch.enable(stage);
+		//createjs.Touch.enable(stage);
 
 		// enabled mouse over / out events
 		stage.enableMouseOver(10);
@@ -523,6 +523,14 @@ function setLayer(layer){
 </script>
 </head>
 <body onload="init();">
+<div>
+<div style="position:relative">
+  <div style="position:absolute;top:0px;left:0px">
   	<canvas id="testCanvas" width="600" height="370"></canvas>
+  	</div>
+ 
+</div>
+
+</div>
 </body>
 </html>
