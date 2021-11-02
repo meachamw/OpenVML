@@ -1,1 +1,152 @@
+<!DOCTYPE html>
+<!---
+	   Description:  Developed by William Meacham, David Lippman and Arri Stinnett.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+-->
+<html>
+    <head>
+        <title>Statistics Calculator (Stat)</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <script type="text/javascript" src="./jquery.js"></script>
+        <script type="text/javascript" src="./stats.js"></script>
+        <style type="text/css">
+            input[type="text"]{
+                margin-bottom:2px;                
+            }
+            input[type="submit"]{
+                position:absolute;
+                left:100px;
+                border: 1px solid;
+            }
+            input.datainput{
+                position:absolute;
+                left:122px;
+                border: 1px solid;
+                padding-left:5px;                
+            }
+            input.numberinput{
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+                padding-left:5px;                
+            }
+            input.statusbox{
+                position:absolute;
+                left:80px;
+                border: 0px;
+            }            
+            select{
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+            }
+            textarea{
+                resize:none;
+            }
+            #freqTable{
+                width: 205px;
+                padding: 8px 0;
+                text-align: center;
+                background-color: lightgrey;
+                margin-top: 0px;
+                margin-bottom: 10px;
+                border: 2px solid black;
+                font-family: Garamond;   
+            }                          
+        </style> 
+    </head>
+    
+    <body>
+        <div style="font-weight:bold">
+            Statistics Calculator (Stat)<br>
+            <textarea disabled  name="Status" id="Status" class="statusbox" cols="32" rows="5" wrap="hard" 
+			    style="color:blue;text-align:left">Enter data below into the frequency table or as a comma delimited list into L1.&#10;(Minimum of five data points). Click Calculate to run.</textarea>
 
+            <div style="height:32px";>
+                <button id = "toggleButton" onclick="toggleTable()">Show Frequency Table</button>                
+            </div>
+            
+            <div id="freqTable" style="display: none;">
+                <tr>
+                   <th> X - Values </th>
+                    &nbsp;
+                   <th> Frequency </th>
+               </tr><br>
+               <tr>
+                 <td><input type= "text" id="x0" size="5">&nbsp;
+                     <input type= "text" id="f0" size="5"></td>
+               </tr><br>
+               <tr>
+                 <td><input type= "text" id="x1" size="5">&nbsp; 
+                     <input type= "text" id="f1" size="5"></td>
+               </tr><br>
+               <tr>
+                 <td><input type= "text" id="x2" size="5">&nbsp;
+                     <input type= "text" id="f2" size="5"></td>
+               </tr><br>
+               <tr>
+                 <td><input type= "text" id="x3" size="5">&nbsp;
+                     <input type= "text" id="f3" size="5"></td>
+               </tr><br>
+               <tr>
+                <td><input type= "text" id="x4" size="5">&nbsp;
+                    <input type= "text" id="f4" size="5"></td>
+              </tr><br>
+              <tr>
+                <td><input type= "text" id="x5" size="5">&nbsp;
+                    <input type= "text" id="f5" size="5"></td>
+              </tr><br>
+              <tr>
+                <td><input type= "text" id="x6" size="5">&nbsp;
+                    <input type= "text" id="f6" size="5"></td>
+              </tr><br>             
+              <div style="margin-top:5px">
+                <button style="width:85px" onclick="aggList()">List Values</button>&nbsp;
+                <button onclick="clearList()">Clear Table</button>       
+              </div>
+            </div>
+            
+            <div style="height:20px">Data List (L1) =</div>
+                <textarea name="data" id="data" value="0" rows="1" cols="32"></textarea><br>
+                <button style="width:100px;margin-bottom:20px;" type="submit" name="PCSubmit" onclick="calcStats()">Calculate</button><br>
+            <div style="height:25px">1-Var Stats:</div>
+
+            <div style="height:25px" title="Mean" > x&#x0304; = 
+                <input disabled type="text" name="xBar" id="xBar" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Sum" > &sum; x =   
+                <input disabled type="text" name="sumX" id="sumX" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Sum of X^2" > &sum; x<sup>2</sup> = 
+                <input disabled type="text" name="sumXSqr" id="sumXSqr" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Standard Dev Sample" > Sx = 
+                <input disabled type="text" name="sX" id="sX" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px"  title="Standard Dev Population" > &sigma; x = 
+                <input disabled type="text" name="sigmaX" id="sigmaX"value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px"  title="Sample Size" > n = 
+                <input disabled type="text" name="N" id="N" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Minimum Value" > minX = 
+                <input disabled type="text" name="minX" id="minX" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px"  title="Median Lower-Half" > Q1 = 
+                <input disabled type="text" name="Q1" id="Q1"value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Median" > Med = 
+                <input disabled type="text" name="med" id="med" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Median Upper-Half" > Q3 = 
+                <input disabled type="text" name="Q3" id="Q3" value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px" title="Maximum Value" > maxX = 
+                <input disabled type="text" name="maxX" id="maxX" value="0" class="numberinput"><br>
+            </div>            
+        </div>        
+    </body>
+</html>
