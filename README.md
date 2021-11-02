@@ -13,5 +13,5 @@ Index of Virtual Manipulatives
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/CuisinartRodsVert.html">Vertical Cuisinart Rods</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/SievesState.html">SievesState</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/CuisinartRodsHorizMobile.html">CuisinartMobile</a></li>
-  <li><a href="https://meachamw.github.io/OPenVML/In%20Progress/Stats/indexStats.html">FreqStats</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/Stats/indexStats.html">FreqStats</a></li>
   </ol>
