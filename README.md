@@ -14,4 +14,5 @@ Index of Virtual Manipulatives
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/SievesState.html">SievesState</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/CuisinartRodsHorizMobile.html">CuisinartMobile</a></li>
   <li><a href="https://meachamw.github.io/OpenVML/In%20Progress/Stats/indexStats.html">FreqStats</a></li>
+  <li><a href="https://meachamw.github.io/OpenVML/tvm/indexCP.html">Test Combination</a></li>
   </ol>
