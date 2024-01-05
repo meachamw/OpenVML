@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!---
+	   Description:  Developed by William Meacham, and David Lippman.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+-->
+<html>
+    <head>
+        <title>Statistics Calculator (Stat)</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <script type="text/javascript" src="js/libs/jquery/jquery.js"></script>
+        <script type="text/javascript" src="js/libs/stats.js"></script>
+        <style type="text/css">
+            input[type="submit"]{
+                position:absolute;
+                left:100px;
+                border: 1px solid;
+            }
+            input.datainput{
+                position:absolute;
+                left:40px;
+                border: 1px solid;
+                padding-left:5px;
+                
+            }
+            input.numberinput{
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+                padding-left:5px;
+                
+            }
+            input.statusbox{
+                position:absolute;
+                left:80px;
+                border: 0px;
+            }
+
+            select {
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+            }
+            textarea {
+                resize:none;
+            }
+        </style>
+ 
+    </head>
+    <body>
+        <div style="font-weight:bold">
+            Statistics Calculator (Stat)<br>
+            <textarea disabled  name="Status" id="Status" class="statusbox" cols="36" rows="3" wrap="hard" 
+			  style="color:blue;text-align:left">Enter the data below as a comma delimited list.  (Minimum of five data points)</textarea>
+            <div style="height:25px">
+            Data List (L1) =<br> <input type="text" name="data" id="data"  value="0" class="datainput" size="30"><br>
+            </div>
+			<br>
+			<p>1-Var Stats</p>
+            <div style="height:25px">
+            x&#x0304; = <input disabled type="text" name="xBar" id="xBar"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            &sum; x = <input disabled type="text" name="sumX" id="sumX"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            &sum; x<sup>2</sup> = <input disabled type="text" name="sumXSqr" id="sumXSqr"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            Sx = <input disabled type="text" name="sX" id="sX"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            &sigma; x = <input disabled type="text" name="sigmaX" id="sigmaX"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            n = <input disabled type="text" name="N" id="N"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            minX = <input disabled type="text" name="minX" id="minX"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            Q1 = <input disabled type="text" name="Q1" id="Q1"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            Med = <input disabled type="text" name="med" id="med"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            Q3 = <input disabled type="text" name="Q3" id="Q3"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            maxX = <input disabled type="text" name="maxX" id="maxX"  value="0" class="numberinput"><br>
+            </div>
+			<div style="height:25px">
+            <input type="submit" name="PCSubmit" value="Solve" onclick="calcStats()"><br>
+            </div>	
+        </div>
+    </body>
+</html>

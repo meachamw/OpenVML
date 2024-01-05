@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Time Value of Money Calculator</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <script type="text/javascript" src="js/libs/jquery/jquery.js"></script>
+        <script type="text/javascript" src="js/libs/tvm.js"></script>
+        <style type="text/css">
+            input[type="submit"]{
+                border: 1px solid;
+            }
+            input.numberinput{
+                border: 1px solid;
+                padding-left:5px;
+            }
+            input.statusbox{
+                border: 0px;
+            }
+
+            select.PY {
+                border: 1px solid;
+            }
+            select.CY {
+                border: 1px solid;
+            }
+            textarea {
+                resize:none;
+            }
+        </style>
+ 
+    </head>
+    <body>
+		<table form="presentation">
+		  <tr>
+			<th colspan="3">
+				<div >Time Value of Money Solver</div>
+			</th>
+		  </tr>
+		  <tr>
+			<td height = "50px" valign="top" width="45%">
+				<div >PV: = &nbsp;&nbsp;&nbsp;<input type="text" name="PV" id="PV"  value="0" class="numberinput" size="10"></div>
+				<div >Present Value<br></div>
+			</td>
+			<td colspan="2" height = "50px" valign="top">
+				<div >N: = &nbsp;&nbsp;<input type="text" name="N" id="N" value="0" class="numberinput" size="10"><br></div>
+				<div >Number of Compounding Periods<br></div>
+			</td>
+		</tr>
+		<tr>
+			<td height = "50px" valign="top">
+				<div >PMT: = <input type="text" name="PMT" id="PMT"  value="0" class="numberinput" size="10"></div>
+				<div >Payment<br></div>
+			</td>
+			<td colspan="2" height = "50px" valign="top">
+				<div >I:% = <input type="text" name="I" id="I"  value="0" class="numberinput" size="10"></div>
+				<div >Annual Interest Rate as a Percent<br></div>
+			</td>
+		</tr>
+		<tr>
+			<td height = "60px" valign="top">
+				<div >FV: = &nbsp;&nbsp;&nbsp;<input type="text" name="FV" id="FV"  value="0" class="numberinput" size="10"></div>
+				<div >Future Value<br></div>
+			</td>
+			<td valign="top" align="center">
+				<div>P/Y: <select name="PY" id="PY" class="PY" onchange="updateCY()">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="4">4</option>
+						<option value="12" selected>12</option>
+						<option value="52">52</option>
+						<option value="365">365</option>
+					</select>
+					<div style="height:25px;font-size:smaller" >Payments<br> per Year</div>
+				</div>
+			</td>
+			<td valign="top"  align="center">
+				<div >C/Y: <select name="CY" id="CY" class="CY" onchange="updatePY()">
+					  <option value="1">1</option>
+					  <option value="2">2</option>
+					  <option value="4">4</option>
+					  <option value="12" selected>12</option>
+					  <option value="52">52</option>
+					  <option value="365">365</option>
+					</select> <br>
+					<div style="height:25px;font-size:smaller" >Compounding<br> Periods per Year</div>
+				</div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3" align="center">
+					<input type="submit" name="PVSubmit" value="PV Solve" onclick="PV()">
+					<input type="submit" name="PMTSubmit" value="PMT Solve" onclick="PMT()">
+					<input type="submit" name="FVSubmit" value="FV Solve" onclick="FV()">
+					<input type="submit" name="NSubmit" value="N Solve"  onclick="bigN()">
+					<input type="submit" name="ISubmit" value="I% Solve" onclick="interest()">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3" align="center">
+					<div><textarea readonly  name="Status" id="Status" class="statusbox" cols="55" rows="1" wrap="hard" style="color:blue;text-align:center"></textarea></div>
+				</td>
+			</tr>
+		</table>
+		
+    </body>
+</html>

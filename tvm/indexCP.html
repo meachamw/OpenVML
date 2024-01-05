@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!---
+	   Description:  Developed by William Meacham, and David Lippman.
+	                 This is an Open Educational Resource (OER) designed to help students understand the fundamental concepts of mathematics.
+					 For more information, contact William.Meacham@Scottsdalecc.edu  
+	                 Copyright 2017: NonCommercial ShareAlike - International 4.0 - 
+-->
+<html>
+    <head>
+        <title>Factorial, Combination, and Permutation Calculator</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <script type="text/javascript" src="js/libs/jquery/jquery.js"></script>
+        <script type="text/javascript" src="js/libs/cp.js"></script>
+        <style type="text/css">
+            input[type="submit"]{
+                position:absolute;
+                left:100px;
+                border: 1px solid;
+            }
+            input.numberinput{
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+                padding-left:5px;
+                
+            }
+            input.statusbox{
+                position:absolute;
+                left:80px;
+                border: 0px;
+            }
+
+            select {
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+            }
+            textarea {
+                resize:none;
+            }
+        </style>
+ 
+    </head>
+    <body>
+        <div style="font-weight:bold">
+            Factorial, Combination, and Permutation Calculator<br>
+            <textarea disabled  name="Status" id="Status" class="statusbox" cols="31" rows="3" wrap="hard" 
+			  style="color:blue;text-align:left">Enter n and r and click solve.       (Given n and r are integers greater than zero and n >= r)</textarea>
+            <div style="height:25px">
+            n = <input type="text" name="N" id="N"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            r = <input type="text" name="R" id="R"  value="0" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            n! = <input type="text" disabled readonly name="NFact" id="NFact"  value="" class="numberinput"><br>			 
+			</div>
+            <div style="height:25px">
+            nPr = <input type="text" disabled readonly name="Perm" id="Perm"  value="" class="numberinput"><br>
+            </div>
+            <div style="height:25px">
+            nCr = <input readonly disabled type="text" name="Comb" id="Comb"  value="" class="numberinput"><br>
+            </div>
+			<div style="height:25px">
+            <input type="submit" name="PCSubmit" value="Solve" onclick="PC()"><br>
+            </div>	
+        </div>
+    </body>
+</html>

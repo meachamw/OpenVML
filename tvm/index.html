@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Time Value of Money Calculator</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <script type="text/javascript" src="js/libs/jquery/jquery.js"></script>
+        <script type="text/javascript" src="js/libs/tvm.js"></script>
+        <style type="text/css">
+            input[type="submit"]{
+                position:absolute;
+                left:250px;
+                border: 1px solid;
+            }
+            input.numberinput{
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+                padding-left:5px;
+                
+            }
+            input.statusbox{
+                position:absolute;
+                left:80px;
+                border: 0px;
+            }
+
+            select {
+                position:absolute;
+                left:80px;
+                border: 1px solid;
+            }
+            textarea {
+                resize:none;
+            }
+        </style>
+ 
+    </head>
+    <body>
+        <div style="font-weight:bold">
+            Time Value of Money Solver<br>
+            <textarea readonly  name="Status" id="Status" class="statusbox" cols="34" rows="2" wrap="hard" style="color:blue;text-align:center">Enter the given values.</textarea>
+            <div style="height:25px">
+            N: = <input type="text" name="N" id="N" value="0" class="numberinput"><input type="submit" name="NSubmit" value="Solve"  onclick="bigN()"><br>
+            </div>
+            <div style="height:25px;font-size:smaller" >
+                 Number of Compounding Periods</div>
+            <div style="height:25px">
+            I:% = <input type="text" name="I" id="I"  value="0" class="numberinput"><input type="submit" name="ISubmit" value="Solve" onclick="interest()"><br>
+            </div>
+            <div style="height:25px;font-size:smaller" >
+                Annual Interest Rate as a Percent</div>
+            <div style="height:25px">
+            PV: = <input type="text" name="PV" id="PV"  value="0" class="numberinput"><input type="submit" name="PVSubmit" value="Solve" onclick="PV()"><br>
+            </div>
+            <div style="height:25px;font-size:smaller" >Present Value</div>
+            <div style="height:25px">
+            PMT: = <input type="text" name="PMT" id="PMT"  value="0" class="numberinput"><input type="submit" name="PMTSubmit" value="Solve" onclick="PMT()"><br>
+            </div>
+            <div style="height:25px;font-size:smaller" >
+                Payment</div>
+            <div style="height:25px">
+            FV: = <input type="text" name="FV" id="FV"  value="0" class="numberinput"><input type="submit" name="FVSubmit" value="Solve" onclick="FV()"><br>
+            </div>
+            <div style="height:25px;font-size:smaller" >Future Value</div>
+            <div style="height:25px">
+             P/Y: <select name="PY" id="PY"  onchange="updateCY()">
+             <option value="1">1</option>
+             <option value="2">2</option>
+             <option value="4">4</option>
+             <option value="12" selected>12</option>
+             <option value="52">52</option>
+             <option value="365">365</option>
+            </select> <br>
+            </div>
+            <div style="height:25px;font-size:smaller" >Payments per Year</div>
+            <div style="height:25px">
+            C/Y: <select name="CY" id="CY" onchange="updatePY()">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="4">4</option>
+              <option value="12" selected>12</option>
+              <option value="52">52</option>
+              <option value="365">365</option>
+            </select> <br>
+            </div>
+            <div style="height:25px;font-size:smaller" >Compounding Periods per Year</div>
+            PMT: = END<br>
+            <div style="height:25px;font-size:smaller" >
+                Payments are made at the end of the period</div>
+        </div>
+    </body>
+</html>
