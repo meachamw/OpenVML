@@ -93,7 +93,7 @@ function PC() {
 		} else {
 			nFact = factorial(n);
 			nFact = Math.round(nFact);
-			if (r == 0 || (r == n)) {
+			if (r == 0) { // || (r == n)) {
 				P = 1;
 				C = 1;
 			} else {
